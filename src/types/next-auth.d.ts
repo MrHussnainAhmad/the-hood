@@ -28,5 +28,6 @@ declare module "next-auth/jwt" {
     providerEmployeeRange?: string | null;
     companyVerificationStatus?: string | null;
     remember?: boolean;
+    userSyncAt?: number;
   }
 }

@@ -76,6 +76,10 @@ model User {
   accounts      Account[]
   sessions      Session[]
   payments      Payment[]
+
+  @@index([role])
+  @@index([isBanned])
+  @@index([providerEmployeeRange, companyVerificationStatus])
 }
 
 model ProviderLocation {
@@ -89,6 +93,9 @@ model ProviderLocation {
   updatedAt DateTime @updatedAt
 
   provider  User     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+  @@index([city, area, pincode])
 }
 
 model Account {
@@ -141,6 +148,10 @@ model Service {
 
   orders      Order[]
   provider    User?    @relation(fields: [providerId], references: [id], onDelete: SetNull)
+
+  @@index([active])
+  @@index([providerId])
+  @@index([createdAt])
 }
 
 model AvailableLocation {
@@ -190,6 +201,14 @@ model Order {
   service         Service       @relation(fields: [serviceId], references: [id])
   review          Review?
   payments        Payment[]
+
+  @@index([userId])
+  @@index([providerId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([providerId, status])
 }
 
 model Review {
@@ -202,6 +221,9 @@ model Review {
 
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model Payment {
@@ -220,4 +242,8 @@ model Payment {
 
   order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
 }

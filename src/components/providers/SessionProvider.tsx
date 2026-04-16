@@ -9,8 +9,8 @@ export default function SessionProvider({
 }) {
   return (
     <NextAuthSessionProvider
-      refetchInterval={5 * 60} // Refetch session every 5 minutes
-      refetchOnWindowFocus={true} // Refetch when window gains focus
+      refetchInterval={0}
+      refetchOnWindowFocus={false}
     >
       {children}
     </NextAuthSessionProvider>

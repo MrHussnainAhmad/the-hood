@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { usePollingCount } from "@/lib/hooks/usePollingCount";
 
 const guestLinks = [
   { label: "Services", href: "/services" },
@@ -16,6 +17,11 @@ const guestLinks = [
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { data: session } = useSession();
+  const isProvider = session?.user.role === "PROVIDER";
+  const providerOrdersCount = usePollingCount({
+    endpoint: "/api/provider/orders/count",
+    enabled: isProvider,
+  });
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/login" });
@@ -66,9 +72,16 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-4 py-2 text-sm font-medium text-neutral-700 transition-all duration-300 hover:bg-mist hover:text-ink"
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-neutral-700 transition-all duration-300 hover:bg-mist hover:text-ink"
             >
-              {link.label}
+              <span>{link.label}</span>
+              {isProvider &&
+                link.href === "/provider/orders" &&
+                providerOrdersCount.hasBadge && (
+                  <span className="inline-flex min-w-6 justify-center rounded-full bg-primary-600 px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-white">
+                    {providerOrdersCount.label}
+                  </span>
+                )}
             </Link>
           ))}
         </nav>
@@ -124,9 +137,16 @@ export default function Navbar() {
               key={link.href}
               href={link.href}
               onClick={() => setIsMenuOpen(false)}
-              className="block rounded-xl px-3 py-3 text-sm font-medium text-neutral-700 hover:bg-white"
+              className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-neutral-700 hover:bg-white"
             >
-              {link.label}
+              <span>{link.label}</span>
+              {isProvider &&
+                link.href === "/provider/orders" &&
+                providerOrdersCount.hasBadge && (
+                  <span className="inline-flex min-w-6 justify-center rounded-full bg-primary-600 px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-white">
+                    {providerOrdersCount.label}
+                  </span>
+                )}
             </Link>
           ))}
         </nav>

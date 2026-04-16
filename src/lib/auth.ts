@@ -4,6 +4,8 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+const TOKEN_USER_SYNC_INTERVAL_SECONDS = 90;
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -21,6 +23,16 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password: true,
+            role: true,
+            isBanned: true,
+            providerEmployeeRange: true,
+            companyVerificationStatus: true,
+          },
         });
 
         if (!user || !user.password) {
@@ -64,6 +76,7 @@ export const authOptions: NextAuthOptions = {
         token.remember = Boolean(user.remember);
         const nowInSeconds = Math.floor(Date.now() / 1000);
         token.exp = nowInSeconds + (token.remember ? 30 * 24 * 60 * 60 : 24 * 60 * 60);
+        token.userSyncAt = nowInSeconds;
       }
       
       // Handle session updates
@@ -71,7 +84,13 @@ export const authOptions: NextAuthOptions = {
         token = { ...token, ...session };
       }
       
-      if (token.id) {
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      const shouldSyncUser =
+        trigger === "update" ||
+        !token.userSyncAt ||
+        nowInSeconds - Number(token.userSyncAt) >= TOKEN_USER_SYNC_INTERVAL_SECONDS;
+
+      if (token.id && shouldSyncUser) {
         let latestUser: {
           role: string;
           isBanned: boolean;
@@ -107,6 +126,7 @@ export const authOptions: NextAuthOptions = {
           token.providerEmployeeRange = latestUser.providerEmployeeRange;
           token.companyVerificationStatus = latestUser.companyVerificationStatus;
         }
+        token.userSyncAt = nowInSeconds;
       }
 
       return token;

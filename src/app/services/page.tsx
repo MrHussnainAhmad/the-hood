@@ -4,6 +4,8 @@ import { Sparkles, Paintbrush, Wrench, Droplets, Bug, House, ArrowRight } from "
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 async function getServices() {
   return prisma.service.findMany({ where: { active: true }, orderBy: { createdAt: "desc" } });
 }

@@ -5,10 +5,16 @@ import { usePathname } from "next/navigation";
 import { Home, Briefcase, Package, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { usePollingCount } from "@/lib/hooks/usePollingCount";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const isProvider = session?.user.role === "PROVIDER";
+  const providerOrdersCount = usePollingCount({
+    endpoint: "/api/provider/orders/count",
+    enabled: isProvider,
+  });
   const navigation = [
     { name: "Home", href: "/", icon: Home },
     { name: "Services", href: "/services", icon: Briefcase },
@@ -38,12 +44,21 @@ export default function MobileBottomNav() {
                   : "text-neutral-600 hover:bg-neutral-50 active:scale-95"
               )}
             >
-              <item.icon
-                className={cn(
-                  "w-6 h-6 transition-transform",
-                  isActive && "scale-110"
-                )}
-              />
+              <div className="relative">
+                <item.icon
+                  className={cn(
+                    "w-6 h-6 transition-transform",
+                    isActive && "scale-110"
+                  )}
+                />
+                {isProvider &&
+                  item.name === "Orders" &&
+                  providerOrdersCount.hasBadge && (
+                    <span className="absolute -right-2 -top-2 inline-flex min-w-5 justify-center rounded-full bg-primary-600 px-1 py-[1px] text-[10px] font-semibold leading-3 text-white">
+                      {providerOrdersCount.label}
+                    </span>
+                  )}
+              </div>
               <span className="text-xs font-medium">{item.name}</span>
             </Link>
           );

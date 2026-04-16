@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { usePollingCount } from "@/lib/hooks/usePollingCount";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -28,6 +29,9 @@ const navigation = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const verificationCount = usePollingCount({
+    endpoint: "/api/admin/verifications/count",
+  });
 
   return (
     <div className="hidden md:flex md:flex-none md:w-64">
@@ -61,7 +65,13 @@ export default function AdminSidebar() {
                 )}
               >
                 <item.icon className="w-5 h-5" />
-                {item.name}
+                <span>{item.name}</span>
+                {item.href === "/admin/verifications" &&
+                  verificationCount.hasBadge && (
+                    <span className="ml-auto inline-flex min-w-6 justify-center rounded-full bg-accent-600 px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-white">
+                      {verificationCount.label}
+                    </span>
+                  )}
               </Link>
             );
           })}
