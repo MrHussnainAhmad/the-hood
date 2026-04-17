@@ -1,9 +1,9 @@
-import { DM_Sans, DM_Serif_Display } from "next/font/google";
+import { DM_Serif_Display, Manrope } from "next/font/google";
 
-export const dmSans = DM_Sans({
+export const dmSans = Manrope({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-dm-sans",
+  variable: "--font-manrope",
 });
 
 export const dmSerif = DM_Serif_Display({

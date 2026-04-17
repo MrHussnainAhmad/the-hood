@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { censorAbusiveLanguage } from "@/lib/moderation";
 
 export async function PATCH(
   request: Request,
@@ -91,7 +92,17 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.json(order);
+    const sanitizedOrder = {
+      ...order,
+      review: order.review
+        ? {
+            ...order.review,
+            comment: censorAbusiveLanguage(order.review.comment),
+          }
+        : null,
+    };
+
+    return NextResponse.json(sanitizedOrder);
   } catch (error) {
     console.error("Order fetch error:", error);
     return NextResponse.json(

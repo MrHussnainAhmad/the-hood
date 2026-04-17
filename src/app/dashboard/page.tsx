@@ -1,16 +1,25 @@
-import { getServerSession } from "next-auth";
+﻿import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/layout/Navbar";
-import { Package, Clock, CheckCircle, XCircle } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  Package,
+  Clock3,
+  CircleCheck,
+  CircleX,
+  ArrowUpRight,
+  MapPin,
+  CalendarDays,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 export const dynamic = "force-dynamic";
 
 async function getUserOrders(userId: string) {
-  return await prisma.order.findMany({
+  return prisma.order.findMany({
     where: { userId },
     include: {
       service: true,
@@ -20,22 +29,50 @@ async function getUserOrders(userId: string) {
   });
 }
 
-// Infer types from the return value
 type Orders = Awaited<ReturnType<typeof getUserOrders>>;
 type Order = Orders[number];
+
+const statusMap: Record<
+  string,
+  {
+    label: string;
+    classes: string;
+    icon: ReactNode;
+  }
+> = {
+  PROCESSING: {
+    label: "Processing",
+    classes: "border-amber-200 bg-amber-50 text-amber-800",
+    icon: <Clock3 className="h-3.5 w-3.5" />,
+  },
+  ON_WAY: {
+    label: "On Way",
+    classes: "border-sky-200 bg-sky-50 text-sky-800",
+    icon: <Package className="h-3.5 w-3.5" />,
+  },
+  WORKING: {
+    label: "Working",
+    classes: "border-violet-200 bg-violet-50 text-violet-800",
+    icon: <Clock3 className="h-3.5 w-3.5" />,
+  },
+  COMPLETED: {
+    label: "Completed",
+    classes: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    icon: <CircleCheck className="h-3.5 w-3.5" />,
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    classes: "border-rose-200 bg-rose-50 text-rose-800",
+    icon: <CircleX className="h-3.5 w-3.5" />,
+  },
+};
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    redirect("/login");
-  }
-  if (session.user.role === "PROVIDER") {
-    redirect("/provider");
-  }
-  if (session.user.role === "ADMIN") {
-    redirect("/admin");
-  }
+  if (!session) redirect("/login");
+  if (session.user.role === "PROVIDER") redirect("/provider");
+  if (session.user.role === "ADMIN") redirect("/admin");
 
   const orders = await getUserOrders(session.user.id);
 
@@ -46,209 +83,116 @@ export default async function DashboardPage() {
     completed: orders.filter((o: Order) => o.status === "COMPLETED").length,
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "PROCESSING":
-        return <Clock className="w-5 h-5 text-yellow-600" />;
-      case "ON_WAY":
-        return <Package className="w-5 h-5 text-blue-600" />;
-      case "COMPLETED":
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case "CANCELLED":
-        return <XCircle className="w-5 h-5 text-red-600" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "PROCESSING":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "ON_WAY":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "COMPLETED":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "CANCELLED":
-        return "bg-red-100 text-red-800 border-red-200";
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-neutral-900 mb-2">
-            Welcome back, {session.user.name}!
-          </h1>
-          <p className="text-neutral-600">
-            Manage your orders and track services
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-neutral-600 mb-1">Total Orders</p>
-                <p className="text-3xl font-bold text-neutral-900">
-                  {stats.total}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                <Package className="w-6 h-6 text-primary-600" />
-              </div>
+      <main className="section-space pb-12">
+        <div className="page-shell">
+          <header className="mb-8 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-600">Consumer Workspace</p>
+              <h1 className="mt-3 text-[clamp(1.8rem,4vw,3rem)] text-ink">Welcome back, {session.user.name}</h1>
+              <p className="mt-2 text-sm text-neutral-600">Track your active jobs and service history from one place.</p>
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-neutral-600 mb-1">Processing</p>
-                <p className="text-3xl font-bold text-yellow-600">
-                  {stats.processing}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Clock className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-neutral-600 mb-1">On the Way</p>
-                <p className="text-3xl font-bold text-blue-600">
-                  {stats.onWay}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Package className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-neutral-600 mb-1">Completed</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {stats.completed}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Orders List */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-display font-semibold text-neutral-900">
-              Recent Orders
-            </h2>
-            <Link href="/services">
-              <Button size="sm">Book New Service</Button>
+            <Link href="/services" className="justify-self-start lg:justify-self-end">
+              <Button>
+                Book New Service
+                <ArrowUpRight className="h-4 w-4" />
+              </Button>
             </Link>
-          </div>
+          </header>
 
-          {orders.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                No orders yet
-              </h3>
-              <p className="text-neutral-600 mb-6">
-                Start by booking your first service
-              </p>
-              <Link href="/services">
-                <Button>Browse Services</Button>
-              </Link>
+          <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <article className="card">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Total Orders</p>
+              <p className="mt-3 text-4xl font-bold tracking-tight text-ink">{stats.total}</p>
+            </article>
+            <article className="card">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Processing</p>
+              <p className="mt-3 text-4xl font-bold tracking-tight text-amber-700">{stats.processing}</p>
+            </article>
+            <article className="card">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">On Way</p>
+              <p className="mt-3 text-4xl font-bold tracking-tight text-sky-700">{stats.onWay}</p>
+            </article>
+            <article className="card">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Completed</p>
+              <p className="mt-3 text-4xl font-bold tracking-tight text-emerald-700">{stats.completed}</p>
+            </article>
+          </section>
+
+          <section className="card">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-2xl text-ink">Recent Orders</h2>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {orders.map((order: Order) => (
-                <div
-                  key={order.id}
-                  className="border border-neutral-200 rounded-lg p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-neutral-900">
-                          {order.service.name}
-                        </h3>
-                        <span
-                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                            order.status
-                          )}`}
-                        >
-                          {getStatusIcon(order.status)}
-                          {order.status.replace("_", " ")}
-                        </span>
-                      </div>
-                      <p className="text-sm text-neutral-600 mb-2">
-                        {order.description}
-                      </p>
-                      <div className="flex flex-wrap gap-4 text-sm text-neutral-600">
-                        <span>📍 {order.city}</span>
-                        <span>
-                          📅{" "}
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Images */}
-                  {order.images.length > 0 && (
-                    <div className="flex gap-2 mb-4">
-                      {order.images.slice(0, 3).map((img: string, idx: number) => (
-                        <div
-                          key={idx}
-                          className="w-20 h-20 bg-neutral-100 rounded-lg overflow-hidden"
-                        >
-                          <img
-                            src={img}
-                            alt="Order"
-                            className="w-full h-full object-cover"
-                          />
+            {orders.length === 0 ? (
+              <div className="grid min-h-[260px] place-items-center rounded-xl border border-dashed border-line bg-paper/65 p-6 text-center">
+                <div>
+                  <Package className="mx-auto h-10 w-10 text-neutral-400" />
+                  <p className="mt-3 text-lg font-semibold text-ink">No orders yet</p>
+                  <p className="mt-1 text-sm text-neutral-600">Book your first service to start tracking activity here.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.map((order: Order) => {
+                  const status = statusMap[order.status] ?? statusMap.PROCESSING;
+                  return (
+                    <article key={order.id} className="rounded-xl border border-line bg-white/75 p-4 sm:p-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <h3 className="text-xl text-ink">{order.service.name}</h3>
+                            <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${status.classes}`}>
+                              {status.icon}
+                              {status.label}
+                            </span>
+                          </div>
+                          <p className="line-clamp-2 text-sm text-neutral-700">{order.description}</p>
+                          <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-neutral-600">
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin className="h-3.5 w-3.5" />
+                              {order.city}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
-                      ))}
-                      {order.images.length > 3 && (
-                        <div className="w-20 h-20 bg-neutral-100 rounded-lg flex items-center justify-center text-neutral-600 text-sm font-medium">
-                          +{order.images.length - 3}
+
+                        <div className="flex gap-2">
+                          <Link href={`/orders/${order.id}`}>
+                            <Button variant="outline" size="sm">View Details</Button>
+                          </Link>
+                          {order.status === "COMPLETED" && !order.review && (
+                            <Link href={`/orders/${order.id}/review`}>
+                              <Button size="sm" variant="secondary">Leave Review</Button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+
+                      {order.images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+                          {order.images.slice(0, 6).map((img: string, idx: number) => (
+                            <div key={idx} className="overflow-hidden rounded-lg border border-line bg-paper">
+                              <img src={img} alt="Order evidence" className="h-16 w-full object-cover" />
+                            </div>
+                          ))}
                         </div>
                       )}
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-3">
-                    <Link href={`/orders/${order.id}`}>
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </Link>
-                    {order.status === "COMPLETED" && !order.review && (
-                      <Link href={`/orders/${order.id}/review`}>
-                        <Button size="sm" variant="secondary">
-                          Leave Review
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
+

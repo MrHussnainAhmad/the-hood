@@ -4,14 +4,14 @@
 
 @layer base {
   :root {
-    --bg: #f7f3ea;
-    --bg-soft: #ece5d8;
-    --text: #14110f;
-    --muted: #6a6259;
-    --line: #cfc5b5;
-    --primary: #c4492d;
-    --primary-dark: #8f2e1b;
-    --accent: #2f7a66;
+    --bg: #f3f0e8;
+    --bg-soft: #ece7dd;
+    --text: #121417;
+    --muted: #5f676f;
+    --line: #d6d1c5;
+    --primary: #b85c38;
+    --primary-dark: #8f4428;
+    --accent: #2f5d50;
   }
 
   * {
@@ -29,10 +29,13 @@
   }
 
   body {
-    letter-spacing: -0.01em;
-    line-height: 1.55;
+    letter-spacing: -0.012em;
+    line-height: 1.65;
     text-rendering: geometricPrecision;
     padding-bottom: env(safe-area-inset-bottom);
+    background-image: radial-gradient(circle at 84% 4%, #f4eee0 0%, transparent 32%),
+      radial-gradient(circle at 12% 88%, #e9e1d2 0%, transparent 34%);
+    background-color: var(--bg);
   }
 
   h1,
@@ -48,12 +51,12 @@
   }
 
   p {
-    color: #3f3b37;
+    color: #2f353b;
   }
 
   ::selection {
-    background: #f5a889;
-    color: #14110f;
+    background: #d6987d;
+    color: #121417;
   }
 
   ::-webkit-scrollbar {
@@ -62,16 +65,24 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #e8dfd1;
+    background: #e9e4d8;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #c4492d, #2f7a66);
+    background: linear-gradient(180deg, #b85c38, #2f5d50);
     border-radius: 999px;
   }
 }
 
 @layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-[88rem] px-4 sm:px-6 md:px-8 lg:px-12;
+  }
+
+  .section-space {
+    @apply py-16 md:py-20 lg:py-24;
+  }
+
   .texture-grain {
     position: relative;
   }
@@ -87,18 +98,18 @@
   }
 
   .btn-primary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-paper transition-all duration-300;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-paper transition-all duration-300;
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    box-shadow: 0 10px 28px rgba(196, 73, 45, 0.22);
+    box-shadow: 0 10px 24px rgba(184, 92, 56, 0.2);
   }
 
   .btn-primary:hover {
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 16px 34px rgba(196, 73, 45, 0.28);
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(184, 92, 56, 0.26);
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-all duration-300;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all duration-300;
     border-color: color-mix(in srgb, var(--accent) 45%, #ffffff);
     color: var(--accent);
     background: rgba(255, 255, 255, 0.72);
@@ -111,29 +122,29 @@
   }
 
   .input-field {
-    @apply w-full rounded-2xl border bg-white/80 px-4 pb-3 pt-5 text-sm outline-none transition-all duration-300;
+    @apply w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none transition-all duration-200;
     border-color: var(--line);
   }
 
   .input-field:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(47, 122, 102, 0.14);
+    box-shadow: 0 0 0 3px rgba(47, 93, 80, 0.16);
   }
 
   .card {
-    @apply rounded-3xl border p-6;
-    border-color: rgba(63, 59, 55, 0.12);
-    background: linear-gradient(165deg, rgba(255, 255, 255, 0.85), rgba(247, 243, 234, 0.82));
-    backdrop-filter: blur(10px);
+    @apply rounded-xl border p-6;
+    border-color: rgba(18, 20, 23, 0.08);
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(8px);
   }
 
   .card-hover {
-    @apply card transition-all duration-300;
+    @apply card transition-all duration-300 ease-out;
   }
 
   .card-hover:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 18px 45px rgba(20, 17, 15, 0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 34px rgba(18, 20, 23, 0.12);
   }
 
   .safe-area-pb {
@@ -141,11 +152,15 @@
   }
 
   .fluid-title {
-    font-size: clamp(2.15rem, 6vw, 5.25rem);
+    font-size: clamp(2.1rem, 6vw, 5rem);
   }
 
   .fluid-subtitle {
-    font-size: clamp(1rem, 2.4vw, 1.35rem);
+    font-size: clamp(1rem, 2.2vw, 1.3rem);
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
   }
 }
 

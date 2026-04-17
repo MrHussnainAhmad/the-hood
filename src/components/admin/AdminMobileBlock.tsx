@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Shield, Smartphone } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminMobileBlock() {
   const [isMobile, setIsMobile] = useState(false);
@@ -51,12 +52,12 @@ export default function AdminMobileBlock() {
           </p>
         </div>
 
-        <a
+        <Link
           href="/"
-          className="inline-block w-full px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+          className="focus-ring inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary-600 px-6 py-3 font-medium text-white transition-colors hover:bg-primary-700"
         >
           Go to Home
-        </a>
+        </Link>
       </div>
     </div>
   );

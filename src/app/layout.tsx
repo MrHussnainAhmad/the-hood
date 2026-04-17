@@ -5,8 +5,13 @@ import { Toaster } from "sonner";
 import SessionProvider from "@/components/providers/SessionProvider";
 
 export const metadata: Metadata = {
-  title: "Hood Studio | Homes, Crafted by Pros",
-  description: "Book trusted service professionals or offer your skills as a provider in Hood Studio.",
+  title: "The Hood | Service Outsourcing Platform",
+  description: "Book trusted service professionals or offer your skills as a provider on The Hood.",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

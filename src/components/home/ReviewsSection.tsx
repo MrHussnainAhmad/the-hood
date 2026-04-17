@@ -1,16 +1,7 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useState } from "react";
-import {
-  Star,
-  Quote,
-  Sparkles,
-  Paintbrush,
-  Wrench,
-  Droplets,
-  Bug,
-  House,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Star, Quote, House, Paintbrush, Wrench, Droplets, Sparkles, Bug } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface Review {
@@ -18,15 +9,8 @@ interface Review {
   rating: number;
   comment: string | null;
   createdAt: string;
-  user: {
-    name: string;
-  };
-  order: {
-    service: {
-      name: string;
-      icon: string | null;
-    };
-  };
+  user: { name: string };
+  order: { service: { name: string; icon: string | null } };
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -45,13 +29,11 @@ export default function ReviewsSection() {
   useEffect(() => {
     async function fetchReviews() {
       try {
-        const response = await fetch("/api/reviews/latest");
+        const response = await fetch("/api/reviews/latest", { cache: "no-store" });
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as Review[];
           setReviews(data);
         }
-      } catch {
-        console.error("Failed to fetch reviews");
       } finally {
         setIsLoading(false);
       }
@@ -59,144 +41,83 @@ export default function ReviewsSection() {
     fetchReviews();
   }, []);
 
+  const average = useMemo(() => {
+    if (reviews.length === 0) return "0.0";
+    return (reviews.reduce((acc, item) => acc + item.rating, 0) / reviews.length).toFixed(1);
+  }, [reviews]);
+
   if (isLoading) {
     return (
-      <section className="py-20 bg-neutral-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          </div>
-        </div>
-      </section>
+      <div className="card grid min-h-[320px] place-items-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-300 border-t-accent-600" />
+      </div>
     );
   }
 
   if (reviews.length === 0) {
-    return null;
+    return (
+      <div className="card min-h-[320px]">
+        <h3 className="text-2xl text-ink">Customer reviews are coming in soon</h3>
+        <p className="mt-3 text-sm text-neutral-700">Complete service orders to populate this live section.</p>
+      </div>
+    );
   }
 
-  const getAverageRating = () => {
-    if (reviews.length === 0) return 0;
-    return (
-      reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
-    ).toFixed(1);
-  };
-
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-neutral-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-full mb-4">
-            <Star className="w-4 h-4 text-primary-600 fill-primary-600" />
-            <span className="text-sm font-medium text-primary-700">Customer Reviews</span>
+    <div className="grid gap-4">
+      <article className="card">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Public Ratings</p>
+        <div className="mt-4 flex items-end gap-3">
+          <p className="text-5xl font-bold tracking-tight text-ink">{average}</p>
+          <div className="pb-1">
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-neutral-600">{reviews.length} latest reviews</p>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-bold text-neutral-900 mb-4">
-            What Our Customers Say
-          </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Don&apos;t just take our word for it. Here&apos;s what our happy customers have to say.
-          </p>
         </div>
+      </article>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {reviews.map((review, index) => {
-            const ServiceIcon =
-              iconMap[(review.order.service.icon || "home").toLowerCase()] || House;
-
-            return (
-              <div
-                key={review.id}
-                className="bg-white rounded-2xl p-6 shadow-premium hover:shadow-premium-lg transition-all duration-300 border border-neutral-100 hover:-translate-y-1"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                      {review.user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-neutral-900">{review.user.name}</p>
-                      <p className="text-xs text-neutral-500">
-                        {new Date(review.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <Quote className="w-8 h-8 text-primary-100" />
-                </div>
-
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < review.rating
-                          ? "text-yellow-400 fill-yellow-400"
-                          : "text-neutral-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                {review.comment && (
-                  <p className="text-neutral-700 mb-4 line-clamp-4 leading-relaxed">
-                    &quot;{review.comment}&quot;
+      <div className="grid gap-4 md:grid-cols-2">
+        {reviews.slice(0, 4).map((review) => {
+          const ServiceIcon = iconMap[(review.order.service.icon ?? "home").toLowerCase()] ?? House;
+          return (
+            <article key={review.id} className="card">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-ink">{review.user.name}</p>
+                  <p className="text-xs text-neutral-600">
+                    {new Date(review.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "2-digit",
+                      year: "numeric",
+                    })}
                   </p>
-                )}
-
-                <div className="pt-4 border-t border-neutral-100">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-accent-100 rounded-lg flex items-center justify-center">
-                      <ServiceIcon className="w-5 h-5 text-primary-700" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-neutral-900">{review.order.service.name}</p>
-                      <p className="text-xs text-neutral-500">Service</p>
-                    </div>
-                  </div>
                 </div>
+                <Quote className="h-5 w-5 text-neutral-300" />
               </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-16 bg-gradient-to-r from-primary-50 to-accent-50 rounded-2xl p-8 border border-primary-100">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <div className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                  {getAverageRating()}
-                </div>
-                <div className="flex flex-col items-start">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-xs text-neutral-600 mt-1">out of 5</p>
-                </div>
+              <div className="mt-3 flex items-center gap-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className={i < review.rating ? "h-4 w-4 fill-amber-400 text-amber-400" : "h-4 w-4 text-neutral-300"}
+                  />
+                ))}
               </div>
-              <p className="text-sm text-neutral-600 font-medium">Average Rating</p>
-            </div>
-
-            <div className="text-center">
-              <div className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent mb-2">
-                {reviews.length}+
+              {review.comment && (
+                <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-neutral-700">{review.comment}</p>
+              )}
+              <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-line bg-paper px-2.5 py-1.5">
+                <ServiceIcon className="h-4 w-4 text-primary-600" />
+                <span className="text-xs font-semibold text-neutral-700">{review.order.service.name}</span>
               </div>
-              <p className="text-sm text-neutral-600 font-medium">Happy Customers</p>
-            </div>
-
-            <div className="text-center">
-              <div className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent mb-2">
-                100%
-              </div>
-              <p className="text-sm text-neutral-600 font-medium">Satisfaction Rate</p>
-            </div>
-          </div>
-        </div>
+            </article>
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
 }
+

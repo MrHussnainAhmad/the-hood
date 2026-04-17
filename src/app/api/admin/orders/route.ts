@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { censorAbusiveLanguage } from "@/lib/moderation";
 
 export async function GET() {
   try {
@@ -33,7 +34,17 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(orders);
+    const sanitizedOrders = orders.map((order) => ({
+      ...order,
+      review: order.review
+        ? {
+            ...order.review,
+            comment: censorAbusiveLanguage(order.review.comment),
+          }
+        : null,
+    }));
+
+    return NextResponse.json(sanitizedOrders);
   } catch (error) {
     console.error("Orders fetch error:", error);
     return NextResponse.json(

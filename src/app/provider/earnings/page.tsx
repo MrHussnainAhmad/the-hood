@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
+import { CreditCard, Link2 } from "lucide-react";
 
 interface EarningOrder {
   id: string;
@@ -52,6 +53,7 @@ export default function ProviderEarningsPage() {
         return {};
       }
     };
+
     const getErrorMessage = (json: Record<string, unknown>, fallback: string) => {
       return typeof json.error === "string" && json.error.trim() ? json.error : fallback;
     };
@@ -69,6 +71,7 @@ export default function ProviderEarningsPage() {
         setIsLoading(false);
       }
     };
+
     const fetchConnect = async () => {
       try {
         const response = await fetch("/api/provider/connect/status");
@@ -80,6 +83,7 @@ export default function ProviderEarningsPage() {
         toast.error(message);
       }
     };
+
     fetchEarnings();
     fetchConnect();
   }, []);
@@ -103,77 +107,88 @@ export default function ProviderEarningsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-display font-bold text-neutral-900 mb-2">Earnings</h1>
-        <p className="text-neutral-600 mb-8">Track what you have earned and what admin has released.</p>
 
-        <div className="card mb-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm text-neutral-500">Stripe Connect</p>
-              <p className="font-semibold text-neutral-900">
-                {connect?.onboarded ? "Connected for payouts" : "Complete onboarding to receive payouts"}
-              </p>
-              {connect?.connected && (
-                <p className="text-xs text-neutral-500 mt-1">
-                  Account: {connect.accountId}
+      <main className="section-space pb-12">
+        <div className="page-shell">
+          <header className="mb-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-600">Provider Earnings</p>
+            <h1 className="mt-3 text-[clamp(1.8rem,4vw,3rem)] text-ink">Payout Workspace</h1>
+            <p className="mt-2 text-sm text-neutral-600">Monitor earnings breakdown and payout release status.</p>
+          </header>
+
+          <section className="card mb-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Stripe Connect</p>
+                <p className="mt-1 font-semibold text-ink">
+                  {connect?.onboarded ? "Connected for payouts" : "Complete onboarding to receive payouts"}
                 </p>
-              )}
+                {connect?.connected && (
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-neutral-500">
+                    <Link2 className="h-3.5 w-3.5" />
+                    Account: {connect.accountId}
+                  </p>
+                )}
+              </div>
+              <Button onClick={startOnboarding} isLoading={isOnboarding}>
+                <CreditCard className="h-4 w-4" />
+                {connect?.onboarded ? "Update Stripe Details" : "Connect Stripe"}
+              </Button>
             </div>
-            <Button onClick={startOnboarding} isLoading={isOnboarding}>
-              {connect?.onboarded ? "Update Stripe Details" : "Connect Stripe"}
-            </Button>
-          </div>
-        </div>
+          </section>
 
-        {isLoading || !data ? (
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <div className="card"><p className="text-sm text-neutral-500">Total Earned</p><p className="text-3xl font-bold">${data.summary.total.toFixed(2)}</p></div>
-              <div className="card"><p className="text-sm text-neutral-500">Paid Out</p><p className="text-3xl font-bold text-emerald-600">${data.summary.paid.toFixed(2)}</p></div>
-              <div className="card"><p className="text-sm text-neutral-500">Ready for Payout</p><p className="text-3xl font-bold text-blue-600">${data.summary.ready.toFixed(2)}</p></div>
-              <div className="card"><p className="text-sm text-neutral-500">Pending Completion</p><p className="text-3xl font-bold text-amber-600">${data.summary.pending.toFixed(2)}</p></div>
+          {isLoading || !data ? (
+            <div className="grid min-h-[220px] place-items-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-600" />
             </div>
+          ) : (
+            <>
+              <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <article className="card"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Total Earned</p><p className="mt-3 text-4xl font-bold text-ink">${data.summary.total.toFixed(2)}</p></article>
+                <article className="card"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Paid Out</p><p className="mt-3 text-4xl font-bold text-emerald-700">${data.summary.paid.toFixed(2)}</p></article>
+                <article className="card"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Ready for Payout</p><p className="mt-3 text-4xl font-bold text-sky-700">${data.summary.ready.toFixed(2)}</p></article>
+                <article className="card"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Pending Completion</p><p className="mt-3 text-4xl font-bold text-amber-700">${data.summary.pending.toFixed(2)}</p></article>
+              </section>
 
-            <div className="card overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-200 text-left text-neutral-600">
-                    <th className="py-3 pr-3">Order</th>
-                    <th className="py-3 pr-3">Service</th>
-                    <th className="py-3 pr-3">Customer</th>
-                    <th className="py-3 pr-3">Gross</th>
-                    <th className="py-3 pr-3">Fee</th>
-                    <th className="py-3 pr-3">You Get</th>
-                    <th className="py-3 pr-3">Payout</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.orders.map((order) => (
-                    <tr key={order.id} className="border-b border-neutral-100">
-                      <td className="py-3 pr-3">#{order.id.slice(-8)}</td>
-                      <td className="py-3 pr-3">{order.service.name}</td>
-                      <td className="py-3 pr-3">{order.user.name || order.user.email}</td>
-                      <td className="py-3 pr-3">${(order.amount || 0).toFixed(2)}</td>
-                      <td className="py-3 pr-3">${(order.platformFee || 0).toFixed(2)}</td>
-                      <td className="py-3 pr-3 font-semibold text-emerald-700">${(order.providerPayoutAmount || 0).toFixed(2)}</td>
-                      <td className="py-3 pr-3">
-                        <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium border bg-neutral-50">
-                          {order.payoutStatus}
-                        </span>
-                      </td>
+              <section className="card overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-line text-left text-neutral-600">
+                      <th className="py-3 pr-3">Order</th>
+                      <th className="py-3 pr-3">Service</th>
+                      <th className="py-3 pr-3">Customer</th>
+                      <th className="py-3 pr-3">Gross</th>
+                      <th className="py-3 pr-3">Fee</th>
+                      <th className="py-3 pr-3">You Get</th>
+                      <th className="py-3 pr-3">Payout</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
+                  </thead>
+                  <tbody>
+                    {data.orders.map((order) => (
+                      <tr key={order.id} className="border-b border-line/70">
+                        <td className="py-3 pr-3">#{order.id.slice(-8)}</td>
+                        <td className="py-3 pr-3">{order.service.name}</td>
+                        <td className="py-3 pr-3">{order.user.name || order.user.email}</td>
+                        <td className="py-3 pr-3">${(order.amount || 0).toFixed(2)}</td>
+                        <td className="py-3 pr-3">${(order.platformFee || 0).toFixed(2)}</td>
+                        <td className="py-3 pr-3 font-semibold text-emerald-700">${(order.providerPayoutAmount || 0).toFixed(2)}</td>
+                        <td className="py-3 pr-3">
+                          <span className="inline-flex rounded-full border border-line bg-paper px-2.5 py-1 text-xs font-semibold text-neutral-700">
+                            {order.payoutStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
+

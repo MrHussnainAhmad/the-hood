@@ -1,11 +1,12 @@
-import { getServerSession } from "next-auth";
+﻿import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/layout/Navbar";
-import { ArrowLeft, MapPin, Calendar, Package, Star } from "lucide-react";
+import { ArrowLeft, MapPin, CalendarDays, Package, Star } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { censorAbusiveLanguage } from "@/lib/moderation";
 
 async function getOrder(orderId: string, userId: string, isAdmin: boolean, isProvider: boolean) {
   const order = await prisma.order.findUnique({
@@ -26,13 +27,20 @@ async function getOrder(orderId: string, userId: string, isAdmin: boolean, isPro
 
   if (!order) return null;
 
-  // Check authorization
   if (!isAdmin && !(isProvider && order.providerId === userId) && order.userId !== userId) {
     return null;
   }
 
   return order;
 }
+
+const statusPill: Record<string, string> = {
+  PROCESSING: "border-amber-200 bg-amber-50 text-amber-800",
+  ON_WAY: "border-sky-200 bg-sky-50 text-sky-800",
+  WORKING: "border-violet-200 bg-violet-50 text-violet-800",
+  COMPLETED: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  CANCELLED: "border-rose-200 bg-rose-50 text-rose-800",
+};
 
 export default async function OrderDetailsPage({
   params,
@@ -42,9 +50,7 @@ export default async function OrderDetailsPage({
   const { orderId } = await params;
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    redirect("/login");
-  }
+  if (!session) redirect("/login");
 
   const order = await getOrder(
     orderId,
@@ -53,226 +59,116 @@ export default async function OrderDetailsPage({
     session.user.role === "PROVIDER"
   );
 
-  if (!order) {
-    redirect("/dashboard");
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "PROCESSING":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "ON_WAY":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "COMPLETED":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "CANCELLED":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-neutral-100 text-neutral-800 border-neutral-200";
-    }
-  };
+  if (!order) redirect("/dashboard");
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-neutral-600 hover:text-primary-600 mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Dashboard
-        </Link>
+      <main className="section-space pb-12">
+        <div className="page-shell max-w-4xl">
+          <Link
+            href="/dashboard"
+            className="focus-ring mb-6 inline-flex min-h-11 items-center gap-2 rounded-lg border border-line bg-paper px-3 text-sm font-semibold text-neutral-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
 
-        <div className="card mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary-600 to-accent-600 rounded-xl flex items-center justify-center text-white text-2xl">
-                {order.service.icon || "🏠"}
+          <article className="card">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="grid h-14 w-14 place-items-center rounded-lg border border-line bg-paper">
+                  <Package className="h-6 w-6 text-primary-700" />
+                </div>
+                <div>
+                  <h1 className="text-2xl text-ink">{order.service.name}</h1>
+                  <p className="text-sm text-neutral-600">Order #{order.id.slice(-8)}</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-display font-bold text-neutral-900">
-                  {order.service.name}
-                </h1>
-                <p className="text-neutral-600">Order #{order.id.slice(-8)}</p>
-              </div>
+
+              <span className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${statusPill[order.status] || "border-line bg-paper text-neutral-700"}`}>
+                {order.status.replace("_", " ")}
+              </span>
             </div>
 
-            <span
-              className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(
-                order.status
-              )}`}
-            >
-              {order.status.replace("_", " ")}
-            </span>
-          </div>
-
-          {/* Order Timeline */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-neutral-700 mb-4">
-              Order Timeline
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    order.status === "PROCESSING" ||
-                    order.status === "ON_WAY" ||
-                    order.status === "COMPLETED"
-                      ? "bg-green-500"
-                      : "bg-neutral-300"
-                  }`}
-                >
-                  <Package className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-neutral-900">Order Placed</p>
-                  <p className="text-sm text-neutral-600">
-                    {new Date(order.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    order.status === "ON_WAY" || order.status === "COMPLETED"
-                      ? "bg-green-500"
-                      : "bg-neutral-300"
-                  }`}
-                >
-                  <Package className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-neutral-900">On the Way</p>
-                  <p className="text-sm text-neutral-600">
-                    {order.status === "ON_WAY" || order.status === "COMPLETED"
-                      ? "In progress"
-                      : "Pending"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    order.status === "COMPLETED"
-                      ? "bg-green-500"
-                      : "bg-neutral-300"
-                  }`}
-                >
-                  <Package className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-neutral-900">Completed</p>
-                  <p className="text-sm text-neutral-600">
-                    {order.completedDate
-                      ? new Date(order.completedDate).toLocaleString()
-                      : "Pending"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Service Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="bg-neutral-50 rounded-lg p-4">
-              <h3 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary-600" />
-                Location
-              </h3>
-              <p className="text-neutral-700">{order.address}</p>
-              <p className="text-neutral-600 text-sm mt-1">
-                {order.city}
-                {order.area && `, ${order.area}`}
-                {order.pincode && ` - ${order.pincode}`}
-              </p>
-            </div>
-
-            {order.scheduledDate && (
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-primary-600" />
-                  Scheduled
-                </h3>
-                <p className="text-neutral-700">
-                  {new Date(order.scheduledDate).toLocaleString()}
+            <div className="mb-6 grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-line bg-white p-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Location</p>
+                <p className="inline-flex items-center gap-1 text-sm text-neutral-800"><MapPin className="h-3.5 w-3.5" />{order.address}</p>
+                <p className="mt-1 text-sm text-neutral-600">
+                  {order.city}
+                  {order.area ? `, ${order.area}` : ""}
+                  {order.pincode ? ` - ${order.pincode}` : ""}
                 </p>
               </div>
-            )}
-          </div>
 
-          {/* Description */}
-          <div className="bg-neutral-50 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-neutral-900 mb-2">
-              Description
-            </h3>
-            <p className="text-neutral-700">{order.description}</p>
-          </div>
-
-          {/* Images */}
-          {order.images.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-neutral-900 mb-3">
-                Uploaded Images
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {order.images.map((img, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-square bg-neutral-100 rounded-lg overflow-hidden"
-                  >
-                    <img
-                      src={img}
-                      alt={`Order image ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
+              {order.scheduledDate && (
+                <div className="rounded-xl border border-line bg-white p-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Scheduled</p>
+                  <p className="inline-flex items-center gap-1 text-sm text-neutral-800">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {new Date(order.scheduledDate).toLocaleString()}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Review Section */}
-          {order.status === "COMPLETED" && !order.review && (
-            <div className="mt-6 pt-6 border-t border-neutral-200">
-              <Link href={`/orders/${order.id}/review`}>
-                <Button className="w-full">
-                  <Star className="w-5 h-5" />
-                  Leave a Review
-                </Button>
-              </Link>
+            <div className="mb-6 rounded-xl border border-line bg-white p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Description</p>
+              <p className="text-sm text-neutral-700">{order.description}</p>
             </div>
-          )}
 
-          {order.review && (
-            <div className="mt-6 pt-6 border-t border-neutral-200">
-              <h3 className="font-semibold text-neutral-900 mb-3">
-                Your Review
-              </h3>
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <div className="flex items-center gap-1 mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        order.review && i < order.review.rating
-                          ? "text-yellow-500 fill-yellow-500"
-                          : "text-neutral-300"
-                      }`}
-                    />
+            {order.images.length > 0 && (
+              <div className="mb-6">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Uploaded Images</p>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {order.images.map((img, idx) => (
+                    <div key={idx} className="overflow-hidden rounded-lg border border-line bg-paper">
+                      <img src={img} alt={`Order image ${idx + 1}`} className="h-24 w-full object-cover" />
+                    </div>
                   ))}
                 </div>
-                {order.review.comment && (
-                  <p className="text-neutral-700">{order.review.comment}</p>
-                )}
               </div>
-            </div>
-          )}
+            )}
+
+            {order.status === "COMPLETED" && !order.review && (
+              <div className="border-t border-line pt-5">
+                <Link href={`/orders/${order.id}/review`}>
+                  <Button className="w-full">
+                    <Star className="h-4 w-4" />
+                    Leave a Review
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {order.review && (
+              <div className="border-t border-line pt-5">
+                <h3 className="text-xl text-ink">Your Review</h3>
+                <div className="mt-3 rounded-xl border border-line bg-paper p-4">
+                  <div className="mb-2 flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${
+                          order.review && i < order.review.rating
+                            ? "fill-amber-500 text-amber-500"
+                            : "text-neutral-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {order.review.comment && (
+                    <p className="text-sm text-neutral-700">{censorAbusiveLanguage(order.review.comment)}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </article>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
+

@@ -1,9 +1,17 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { ArrowRight, ShieldCheck, Sparkles, TimerReset, Wrench } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  BriefcaseBusiness,
+  CircleDollarSign,
+  Clock3,
+  MapPinned,
+} from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import ReviewsSection from "@/components/home/ReviewsSection";
 
 export default async function HomePage() {
@@ -16,92 +24,110 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="texture-grain min-h-screen">
+    <div className="min-h-screen texture-grain">
       <Navbar />
 
-      <main className="px-4 pb-20 pt-8 xs:px-6 md:px-10 lg:px-16">
-        <section className="mx-auto grid w-full max-w-[86rem] gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <article className="relative overflow-hidden rounded-[2rem] border border-line/80 bg-[linear-gradient(140deg,#fff8ef_0%,#f4ead9_60%,#efe1ce_100%)] p-7 sm:p-10 lg:p-14">
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary-300/60 bg-white/70 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              Crafted Home Care
-            </p>
-            <h1 className="fluid-title max-w-3xl text-balance text-ink">
-              Spaces cared for by humans who treat details like art.
-            </h1>
-            <p className="fluid-subtitle mt-6 max-w-2xl text-neutral-700">
-              Hood connects homeowners with trusted providers for cleaning, repairs, maintenance, and specialist work across your city.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/services" className="btn-primary">
-                Explore Services
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/register" className="btn-secondary">
-                Become Consumer or Provider
-              </Link>
-            </div>
-            <div className="mt-10 grid max-w-xl grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-              {["500+ clients", "1200+ jobs", "4.9 avg rating", "24h support"].map((item) => (
-                <div key={item} className="rounded-2xl border border-line/70 bg-white/70 px-3 py-3 text-center text-neutral-700">
-                  {item}
-                </div>
-              ))}
-            </div>
-          </article>
+      <main>
+        <section className="section-space">
+          <div className="page-shell grid gap-8 lg:grid-cols-[1.35fr_0.65fr]">
+            <article className="relative overflow-hidden rounded-2xl border border-line/70 bg-white/70 p-6 sm:p-8 lg:p-12">
+              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-paper px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-700">
+                Service Outsourcing Platform
+              </div>
+              <h1 className="fluid-title max-w-4xl text-balance text-ink">
+                Service operations for homes, teams, and verified local providers.
+              </h1>
+              <p className="fluid-subtitle mt-6 max-w-2xl text-neutral-700">
+                The Hood is a two-sided marketplace where consumers book local services and providers run structured workflows from listing to completion.
+              </p>
+              <div className="mt-10 flex flex-wrap gap-3">
+                <Link href="/register" className="btn-primary">
+                  Create Account
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link href="/services" className="btn-secondary">
+                  Browse Services
+                </Link>
+              </div>
+            </article>
 
-          <aside className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="card-hover relative overflow-hidden">
-              <p className="text-xs uppercase tracking-[0.16em] text-accent-700">Provider Mode</p>
-              <h2 className="mt-3 text-3xl text-ink">Offer your service, manage your own orders.</h2>
-              <p className="mt-3 text-sm text-neutral-600">Create listings, update availability, and move jobs through status in your provider workspace.</p>
-            </div>
-            <div className="card-hover bg-[linear-gradient(130deg,#eaf6f2_0%,#d9eee8_100%)]">
-              <p className="text-xs uppercase tracking-[0.16em] text-accent-800">Consumer Mode</p>
-              <h2 className="mt-3 text-3xl text-ink">Book quickly, track transparently.</h2>
-              <p className="mt-3 text-sm text-neutral-700">Check area availability, share requirements, and follow each service from booking to completion.</p>
-            </div>
-          </aside>
-        </section>
-
-        <section id="how" className="mx-auto mt-20 w-full max-w-[86rem]">
-          <div className="mb-10 flex items-end justify-between gap-4">
-            <h2 className="text-[clamp(1.8rem,4vw,3.25rem)] text-ink">Why Hood feels different</h2>
-            <p className="max-w-sm text-sm text-neutral-600">No bloated marketplace noise. Just clear workflows, trusted people, and reliable execution.</p>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-12">
-            <div className="card md:col-span-7 lg:col-span-6">
-              <ShieldCheck className="h-6 w-6 text-primary-600" />
-              <h3 className="mt-4 text-2xl text-ink">Verified providers, safer decisions</h3>
-              <p className="mt-3 text-neutral-600">Profiles are tied to real accounts, with optional professional CV links and platform-level moderation.</p>
-            </div>
-            <div className="card md:col-span-5 lg:col-span-3">
-              <TimerReset className="h-6 w-6 text-accent-700" />
-              <h3 className="mt-4 text-xl text-ink">Faster booking loop</h3>
-              <p className="mt-3 text-sm text-neutral-600">From service selection to scheduling and payment in one clean flow.</p>
-            </div>
-            <div className="card md:col-span-12 lg:col-span-3">
-              <Wrench className="h-6 w-6 text-primary-700" />
-              <h3 className="mt-4 text-xl text-ink">Full order traceability</h3>
-              <p className="mt-3 text-sm text-neutral-600">Status updates, notes, and review outcomes stay visible after completion.</p>
-            </div>
+            <aside className="grid gap-4">
+              <div className="card bg-white">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Consumer Flow</p>
+                <p className="mt-3 text-2xl text-ink">Find, book, pay, track, review.</p>
+              </div>
+              <div className="card bg-white">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Provider Flow</p>
+                <p className="mt-3 text-2xl text-ink">Publish services, manage orders, receive payouts.</p>
+              </div>
+              <div className="card bg-[linear-gradient(155deg,#1f3d35,#2f5d50)] text-white">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/75">Admin Oversight</p>
+                <p className="mt-3 text-2xl leading-tight">Moderation, verification, revenue and payouts.</p>
+              </div>
+            </aside>
           </div>
         </section>
 
-        <section id="reviews" className="mx-auto mt-20 w-full max-w-[86rem]">
-          <ReviewsSection />
+        <section id="how" className="section-space pt-0">
+          <div className="page-shell">
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+              <h2 className="text-[clamp(1.9rem,4vw,3.4rem)] text-ink">Built for real service logistics</h2>
+              <p className="max-w-md text-sm text-neutral-600">
+                Structured enough for operational use, simple enough for first-time users.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-12">
+              <article className="card md:col-span-7 lg:col-span-5">
+                <BadgeCheck className="h-5 w-5 text-accent-600" />
+                <h3 className="mt-4 text-2xl text-ink">Role-based workflows</h3>
+                <p className="mt-3 text-neutral-700">
+                  Consumer, provider, and admin surfaces are separated to reduce confusion and improve execution speed.
+                </p>
+              </article>
+              <article className="card md:col-span-5 lg:col-span-3">
+                <MapPinned className="h-5 w-5 text-primary-600" />
+                <h3 className="mt-4 text-xl text-ink">Location matching</h3>
+                <p className="mt-3 text-sm text-neutral-700">
+                  Orders are validated by city, area, and pincode/zipcode matching logic.
+                </p>
+              </article>
+              <article className="card md:col-span-6 lg:col-span-2">
+                <Clock3 className="h-5 w-5 text-accent-700" />
+                <h3 className="mt-4 text-xl text-ink">Status transitions</h3>
+                <p className="mt-3 text-sm text-neutral-700">Processing, on-way, working, completed.</p>
+              </article>
+              <article className="card md:col-span-6 lg:col-span-2">
+                <CircleDollarSign className="h-5 w-5 text-primary-700" />
+                <h3 className="mt-4 text-xl text-ink">Platform fees</h3>
+                <p className="mt-3 text-sm text-neutral-700">Tiered by provider team size.</p>
+              </article>
+            </div>
+          </div>
         </section>
 
-        <section className="mx-auto mt-20 w-full max-w-[86rem] overflow-hidden rounded-[2rem] border border-line bg-[linear-gradient(115deg,#1d3a32_0%,#2f7a66_40%,#8f2e1b_100%)] p-8 text-paper sm:p-12">
-          <h2 className="max-w-3xl text-[clamp(1.8rem,4.8vw,4rem)] text-balance">Built for both sides of the work.</h2>
-          <p className="mt-4 max-w-2xl text-paper/85">Create an account as a consumer to book trusted providers, or join as a provider and grow your service business.</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/register" className="inline-flex min-h-11 items-center justify-center rounded-full bg-paper px-6 py-3 text-sm font-semibold text-ink transition hover:translate-y-[-2px]">Create Account</Link>
-            <Link href="/services" className="inline-flex min-h-11 items-center justify-center rounded-full border border-paper/50 px-6 py-3 text-sm font-semibold text-paper transition hover:bg-paper/10">See Service Catalog</Link>
+        <section className="section-space pt-0">
+          <div className="page-shell">
+            <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+              <article className="card bg-[linear-gradient(155deg,#121417,#2f353b)] text-white">
+                <BriefcaseBusiness className="h-6 w-6 text-white" />
+                <h2 className="mt-5 text-[clamp(1.6rem,3vw,2.4rem)] leading-tight">
+                  Outsourcing-ready structure for your FYP demonstration.
+                </h2>
+                <p className="mt-4 text-sm text-white/80">
+                  This architecture supports both local freelancers and company providers with compliance and admin controls.
+                </p>
+              </article>
+              <div id="reviews">
+                <ReviewsSection />
+              </div>
+            </div>
           </div>
         </section>
       </main>
+
+      <Footer />
     </div>
   );
 }
+

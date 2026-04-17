@@ -6,35 +6,32 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { city, area, pincode, serviceId } = body;
 
-    if (!city && !area && !pincode) {
+    if (!city?.trim() || !pincode?.trim()) {
       return NextResponse.json(
-        { error: "At least one of city, area, or pincode is required" },
+        { error: "City and pincode/zipcode are required" },
         { status: 400 }
       );
     }
 
-    const orConditions: Record<string, unknown>[] = [];
-    if (pincode) orConditions.push({ pincode });
-    if (city) {
-      orConditions.push({
-        city: {
-          equals: city,
-          mode: "insensitive" as const,
-        },
-      });
-    }
-    if (area) {
-      orConditions.push({
-        area: {
-          equals: area,
-          mode: "insensitive" as const,
-        },
-      });
-    }
+    const normalizedCity = String(city).trim();
+    const normalizedPincode = String(pincode).trim();
+    const normalizedArea = typeof area === "string" ? area.trim() : "";
 
     const baseWhere = {
       active: true,
-      OR: orConditions,
+      city: {
+        equals: normalizedCity,
+        mode: "insensitive" as const,
+      },
+      pincode: normalizedPincode,
+      ...(normalizedArea
+        ? {
+            area: {
+              equals: normalizedArea,
+              mode: "insensitive" as const,
+            },
+          }
+        : {}),
     };
 
     let location: unknown = null;

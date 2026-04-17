@@ -29,8 +29,8 @@ export default function MobileBottomNav() {
   if (pathname.startsWith("/admin")) return null;
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 safe-area-pb">
-      <nav className="flex items-center justify-around px-2 py-2">
+    <div className="safe-area-pb fixed bottom-0 left-0 right-0 z-50 border-t border-line/80 bg-paper/92 backdrop-blur-md md:hidden">
+      <nav className="flex items-center justify-around px-2 py-2.5">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -38,10 +38,10 @@ export default function MobileBottomNav() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all min-w-[70px]",
+                "focus-ring flex min-w-[72px] flex-col items-center gap-1 rounded-lg px-4 py-2 transition-all",
                 isActive
-                  ? "text-primary-600 bg-primary-50"
-                  : "text-neutral-600 hover:bg-neutral-50 active:scale-95"
+                  ? "bg-white text-ink shadow-soft"
+                  : "text-neutral-600 hover:bg-white/70 active:scale-95"
               )}
             >
               <div className="relative">

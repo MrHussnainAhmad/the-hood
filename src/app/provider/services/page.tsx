@@ -39,6 +39,14 @@ interface ServiceArea {
   pincode: string;
 }
 
+interface ProviderLocation {
+  id: string;
+  city: string;
+  area: string | null;
+  pincode: string | null;
+  active: boolean;
+}
+
 const iconOptions: { value: string; label: string; Icon: LucideIcon }[] = [
   { value: "home", label: "Home", Icon: House },
   { value: "sparkles", label: "Cleaning", Icon: Sparkles },
@@ -50,6 +58,7 @@ const iconOptions: { value: string; label: string; Icon: LucideIcon }[] = [
 
 export default function ProviderServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
+  const [providerLocations, setProviderLocations] = useState<ProviderLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -60,6 +69,7 @@ export default function ProviderServicesPage() {
     icon: "home",
     price: "",
     active: true,
+    selectedLocationIds: [] as string[],
     serviceAreas: [{ city: "", area: "", pincode: "" }] as ServiceArea[],
   });
 
@@ -75,8 +85,19 @@ export default function ProviderServicesPage() {
     }
   };
 
+  const fetchProviderLocations = async () => {
+    try {
+      const response = await fetch("/api/provider/locations");
+      if (!response.ok) return;
+      const data = await response.json();
+      setProviderLocations(Array.isArray(data) ? data : []);
+    } catch {
+      // Non-blocking for service management flow.
+    }
+  };
+
   useEffect(() => {
-    fetchServices();
+    Promise.all([fetchServices(), fetchProviderLocations()]);
   }, []);
 
   const resetForm = () =>
@@ -86,6 +107,7 @@ export default function ProviderServicesPage() {
       icon: "home",
       price: "",
       active: true,
+      selectedLocationIds: [],
       serviceAreas: [{ city: "", area: "", pincode: "" }],
     });
 
@@ -103,9 +125,11 @@ export default function ProviderServicesPage() {
       : "/api/provider/services";
     const method = editingService ? "PATCH" : "POST";
 
-    const hasAnyLocation = formData.serviceAreas.some((a) => a.city.trim());
+    const hasAnyLocation =
+      formData.selectedLocationIds.length > 0 ||
+      formData.serviceAreas.some((a) => a.city.trim());
     if (!editingService && !hasAnyLocation) {
-      toast.error("Please set at least one city for this service");
+      toast.error("Please select an existing location or add a new one");
       return;
     }
 
@@ -123,6 +147,7 @@ export default function ProviderServicesPage() {
     toast.success(editingService ? "Service updated" : "Service created");
     closeModal();
     fetchServices();
+    fetchProviderLocations();
   };
 
   const handleDelete = async (id: string) => {
@@ -130,11 +155,12 @@ export default function ProviderServicesPage() {
     const response = await fetch(`/api/provider/services/${id}`, {
       method: "DELETE",
     });
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      toast.error("Failed to delete service");
+      toast.error(data?.error || "Failed to delete service");
       return;
     }
-    toast.success("Service deleted");
+    toast.success(data?.message || "Service deleted");
     fetchServices();
   };
 
@@ -164,12 +190,29 @@ export default function ProviderServicesPage() {
     }));
   };
 
+  const toggleSelectedLocation = (locationId: string) => {
+    setFormData((prev) => {
+      const exists = prev.selectedLocationIds.includes(locationId);
+      return {
+        ...prev,
+        selectedLocationIds: exists
+          ? prev.selectedLocationIds.filter((id) => id !== locationId)
+          : [...prev.selectedLocationIds, locationId],
+      };
+    });
+  };
+
+  const formatLocation = (location: ProviderLocation) => {
+    return [location.city, location.area, location.pincode].filter(Boolean).join(", ");
+  };
+
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen">
       <Navbar />
 
-      <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6 sm:px-6 lg:px-8">
-        <section className="mb-6 rounded-3xl border border-line bg-white/65 p-4 sm:p-6">
+      <main className="section-space pb-12">
+        <div className="page-shell max-w-6xl">
+        <section className="mb-6 rounded-xl border border-line bg-white/72 p-4 sm:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <h1 className="text-[clamp(1.6rem,4vw,2.3rem)] font-display text-neutral-900">
@@ -205,7 +248,7 @@ export default function ProviderServicesPage() {
             <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-600" />
           </div>
         ) : services.length === 0 ? (
-          <section className="rounded-3xl border border-line bg-white/70 p-10 text-center">
+          <section className="rounded-xl border border-line bg-white/72 p-10 text-center">
             <p className="text-lg font-semibold text-neutral-800">No services yet</p>
             <p className="mt-2 text-sm text-neutral-600">Add your first service to start receiving orders.</p>
           </section>
@@ -240,6 +283,7 @@ export default function ProviderServicesPage() {
                         icon: service.icon || "home",
                         price: service.price || "",
                         active: service.active,
+                        selectedLocationIds: [],
                         serviceAreas: [{ city: "", area: "", pincode: "" }],
                       });
                       setShowModal(true);
@@ -260,12 +304,13 @@ export default function ProviderServicesPage() {
             ))}
           </section>
         )}
+        </div>
       </main>
 
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px]">
           <div className="flex h-full items-end justify-center p-0 sm:items-center sm:p-4">
-            <div className="flex h-[92dvh] w-full flex-col rounded-t-3xl border border-line bg-white sm:h-auto sm:max-h-[88dvh] sm:max-w-2xl sm:rounded-3xl">
+            <div className="flex h-[92dvh] w-full flex-col rounded-t-2xl border border-line bg-white sm:h-auto sm:max-h-[88dvh] sm:max-w-2xl sm:rounded-2xl">
               <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-4 sm:px-6">
                 <div>
                   <h2 className="text-xl font-semibold text-neutral-900">
@@ -364,6 +409,36 @@ export default function ProviderServicesPage() {
                       </button>
                     </div>
 
+                    {providerLocations.length > 0 && (
+                      <div className="mb-4 rounded-xl border border-neutral-200 bg-white p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                          Select Existing Locations
+                        </p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {providerLocations.map((location) => {
+                            const selected = formData.selectedLocationIds.includes(location.id);
+                            return (
+                              <button
+                                key={location.id}
+                                type="button"
+                                onClick={() => toggleSelectedLocation(location.id)}
+                                className={`flex min-h-11 items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition ${
+                                  selected
+                                    ? "border-primary-500 bg-primary-50 text-primary-700"
+                                    : "border-neutral-200 bg-white text-neutral-700 hover:border-primary-200"
+                                }`}
+                              >
+                                <span className="truncate">{formatLocation(location)}</span>
+                                <span className="ml-2 text-xs font-semibold">
+                                  {selected ? "Selected" : "Select"}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-3">
                       {formData.serviceAreas.map((row, index) => (
                         <div key={index} className="rounded-xl border border-neutral-200 bg-white p-3">
@@ -402,6 +477,9 @@ export default function ProviderServicesPage() {
                         </div>
                       ))}
                     </div>
+                    <p className="mt-3 text-xs text-neutral-500">
+                      You can select existing locations and/or add new ones.
+                    </p>
                   </div>
 
                   <label className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-700">

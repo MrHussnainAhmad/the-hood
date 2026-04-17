@@ -55,6 +55,43 @@ async function upsertProviderLocation(
   }
 }
 
+async function activateProviderLocations(providerId: string, locationIds: string[]) {
+  if (!locationIds.length) return;
+
+  const p = prisma as unknown as {
+    providerLocation?: {
+      updateMany: (args: unknown) => Promise<unknown>;
+    };
+  };
+
+  if (p.providerLocation) {
+    await p.providerLocation.updateMany({
+      where: {
+        providerId,
+        id: { in: locationIds },
+      },
+      data: { active: true },
+    });
+  }
+}
+
+async function deleteServiceReviews(serviceId: string) {
+  const orders = await prisma.order.findMany({
+    where: { serviceId },
+    select: { id: true },
+  });
+
+  if (orders.length === 0) return 0;
+
+  const result = await prisma.review.deleteMany({
+    where: {
+      orderId: { in: orders.map((order) => order.id) },
+    },
+  });
+
+  return result.count;
+}
+
 export async function PATCH(
   request: Request,
   props: { params: Promise<{ serviceId: string }> }
@@ -67,7 +104,7 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { serviceAreas, serviceArea, ...serviceData } = body;
+  const { serviceAreas, serviceArea, selectedLocationIds, ...serviceData } = body;
 
   const service = await prisma.service.findUnique({ where: { id: serviceId }, select: { providerId: true } });
   if (!service) {
@@ -76,6 +113,10 @@ export async function PATCH(
 
   if (session.user.role !== "ADMIN" && service.providerId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (serviceData.active === false) {
+    await deleteServiceReviews(serviceId);
   }
 
   const updated = await prisma.service.update({
@@ -88,8 +129,13 @@ export async function PATCH(
     : serviceArea
     ? [serviceArea]
     : [];
+  const selectedIds = Array.isArray(selectedLocationIds)
+    ? selectedLocationIds.filter((id: unknown): id is string => typeof id === "string" && id.trim().length > 0)
+    : [];
 
   if (session.user.role === "PROVIDER") {
+    await activateProviderLocations(session.user.id, selectedIds);
+
     for (const loc of locations) {
       const city = loc?.city?.trim();
       const area = loc?.area?.trim() || null;
@@ -122,6 +168,22 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const orderCount = await prisma.order.count({
+    where: { serviceId },
+  });
+
+  if (orderCount > 0) {
+    await deleteServiceReviews(serviceId);
+    await prisma.service.update({
+      where: { id: serviceId },
+      data: { active: false },
+    });
+    return NextResponse.json({
+      message: "Service archived and related reviews deleted because it has existing orders",
+    });
+  }
+
+  await deleteServiceReviews(serviceId);
   await prisma.service.delete({ where: { id: serviceId } });
-  return NextResponse.json({ message: "Service deleted" });
+  return NextResponse.json({ message: "Service deleted and related reviews removed" });
 }

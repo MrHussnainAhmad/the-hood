@@ -3,6 +3,23 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+async function deleteServiceReviews(serviceId: string) {
+  const orders = await prisma.order.findMany({
+    where: { serviceId },
+    select: { id: true },
+  });
+
+  if (orders.length === 0) return 0;
+
+  const result = await prisma.review.deleteMany({
+    where: {
+      orderId: { in: orders.map((order) => order.id) },
+    },
+  });
+
+  return result.count;
+}
+
 export async function PATCH(
   request: Request,
   props: { params: Promise<{ serviceId: string }> }
@@ -17,6 +34,11 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    if (body.active === false) {
+      await deleteServiceReviews(params.serviceId);
+    }
+
     const service = await prisma.service.update({
       where: { id: params.serviceId },
       data: body,
@@ -44,11 +66,24 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.service.delete({
-      where: { id: params.serviceId },
+    const orderCount = await prisma.order.count({
+      where: { serviceId: params.serviceId },
     });
 
-    return NextResponse.json({ message: "Service deleted" });
+    if (orderCount > 0) {
+      await deleteServiceReviews(params.serviceId);
+      await prisma.service.update({
+        where: { id: params.serviceId },
+        data: { active: false },
+      });
+      return NextResponse.json({
+        message: "Service archived and related reviews deleted because it has existing orders",
+      });
+    }
+
+    await deleteServiceReviews(params.serviceId);
+    await prisma.service.delete({ where: { id: params.serviceId } });
+    return NextResponse.json({ message: "Service deleted and related reviews removed" });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to delete service" },

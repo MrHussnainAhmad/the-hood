@@ -81,6 +81,20 @@ export async function POST(request: Request) {
     );
   }
 
+  const uploadedFiles = Array.isArray(files)
+    ? files.filter(
+        (f: unknown): f is string =>
+          typeof f === "string" && /^https?:\/\//i.test(f)
+      )
+    : [];
+
+  if (uploadedFiles.length === 0) {
+    return NextResponse.json(
+      { error: "Please upload verification files first" },
+      { status: 400 }
+    );
+  }
+
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -90,7 +104,7 @@ export async function POST(request: Request) {
       companyAddress: companyAddress.trim(),
       companyContactName: companyContactName.trim(),
       companyContactPhone: companyContactPhone.trim(),
-      companyVerificationFiles: files.filter((f: unknown) => typeof f === "string"),
+      companyVerificationFiles: uploadedFiles,
       companyVerificationStatus: "SUBMITTED",
       companyVerificationReviewNote: null,
     },

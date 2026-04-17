@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface Service {
@@ -40,7 +40,7 @@ export default function ServicesManagement() {
       const response = await fetch("/api/admin/services");
       const data = await response.json();
       setServices(data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch services");
     } finally {
       setIsLoading(false);
@@ -62,15 +62,13 @@ export default function ServicesManagement() {
       });
 
       if (response.ok) {
-        toast.success(
-          editingService ? "Service updated" : "Service created"
-        );
+        toast.success(editingService ? "Service updated" : "Service created");
         setShowModal(false);
         setEditingService(null);
         resetForm();
         fetchServices();
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to save service");
     }
   };
@@ -82,12 +80,15 @@ export default function ServicesManagement() {
       const response = await fetch(`/api/admin/services/${id}`, {
         method: "DELETE",
       });
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
-        toast.success("Service deleted");
+        toast.success(data?.message || "Service deleted");
         fetchServices();
+      } else {
+        toast.error(data?.error || "Failed to delete service");
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete service");
     }
   };
@@ -114,22 +115,13 @@ export default function ServicesManagement() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <header className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-display font-bold text-neutral-900 mb-2">
-            Services Management
-          </h1>
-          <p className="text-neutral-600">Manage available services</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-600">Admin Services</p>
+          <h1 className="mt-3 text-[clamp(1.6rem,3vw,2.5rem)] text-ink">Service Catalog Control</h1>
+          <p className="mt-2 text-sm text-neutral-600">Manage active offerings visible to consumers.</p>
         </div>
         <Button
           onClick={() => {
@@ -138,136 +130,100 @@ export default function ServicesManagement() {
             setShowModal(true);
           }}
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="h-4 w-4" />
           Add Service
         </Button>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service) => (
-          <div key={service.id} className="card">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-lg flex items-center justify-center text-white text-2xl">
-                  {service.icon || "🏠"}
+      {isLoading ? (
+        <div className="grid min-h-[220px] place-items-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-600" />
+        </div>
+      ) : (
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {services.map((service) => (
+            <article key={service.id} className="card-hover flex h-full flex-col">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="truncate text-xl text-ink">{service.name}</h2>
+                  <p className="mt-1 text-sm text-primary-700">{service.price || "No price set"}</p>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-neutral-900">
-                    {service.name}
-                  </h3>
-                  {service.price && (
-                    <p className="text-sm text-primary-600">{service.price}</p>
-                  )}
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${service.active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-line bg-paper text-neutral-700"}`}>
+                  {service.active ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                  {service.active ? "Active" : "Inactive"}
+                </span>
+              </div>
+
+              <p className="line-clamp-3 flex-1 text-sm text-neutral-700">{service.description}</p>
+
+              <div className="mt-5 flex items-center justify-between border-t border-line/80 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">{service._count.orders} orders</p>
+                <div className="flex gap-1">
+                  <button onClick={() => openEditModal(service)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-line text-primary-700 hover:bg-primary-50">
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => handleDelete(service.id)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-              <span
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  service.active
-                    ? "bg-green-100 text-green-700"
-                    : "bg-neutral-100 text-neutral-700"
-                }`}
-              >
-                {service.active ? (
-                  <Eye className="w-3 h-3" />
-                ) : (
-                  <EyeOff className="w-3 h-3" />
-                )}
-                {service.active ? "Active" : "Inactive"}
-              </span>
-            </div>
+            </article>
+          ))}
+        </section>
+      )}
 
-            <p className="text-sm text-neutral-600 mb-4 line-clamp-2">
-              {service.description}
-            </p>
-
-            <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
-              <span className="text-sm text-neutral-500">
-                {service._count.orders} orders
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => openEditModal(service)}
-                  className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(service.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-display font-bold mb-6">
-              {editingService ? "Edit Service" : "Add Service"}
-            </h2>
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 backdrop-blur-[2px]">
+          <div className="mx-auto mt-8 max-w-md rounded-xl border border-line bg-white p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-2xl text-ink">{editingService ? "Edit Service" : "Add Service"}</h2>
+              <button onClick={() => setShowModal(false)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-line">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
-                label="Service Name *"
+                label="Service Name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
+
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Description *
-                </label>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Description</label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="input-field min-h-[80px]"
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="input-field min-h-[100px]"
                   required
                 />
               </div>
+
               <Input
-                label="Icon (emoji or name)"
+                label="Icon"
                 value={formData.icon}
-                onChange={(e) =>
-                  setFormData({ ...formData, icon: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
               />
+
               <Input
                 label="Price"
                 value={formData.price}
-                onChange={(e) =>
-                  setFormData({ ...formData, price: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 placeholder="Starting from $50"
               />
-              <div className="flex items-center gap-2">
+
+              <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-line bg-paper px-3 text-sm text-neutral-700">
                 <input
                   type="checkbox"
-                  id="active"
                   checked={formData.active}
-                  onChange={(e) =>
-                    setFormData({ ...formData, active: e.target.checked })
-                  }
-                  className="w-4 h-4 text-primary-600 rounded"
+                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
                 />
-                <label htmlFor="active" className="text-sm text-neutral-700">
-                  Active
-                </label>
-              </div>
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1"
-                >
+                Active
+              </label>
+
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="flex-1">
                   Cancel
                 </Button>
                 <Button type="submit" className="flex-1">
@@ -281,3 +237,4 @@ export default function ServicesManagement() {
     </div>
   );
 }
+

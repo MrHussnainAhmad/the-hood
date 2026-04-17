@@ -60,15 +60,15 @@ export default function CheckoutForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="rounded-2xl border border-line bg-[linear-gradient(130deg,#fff8ef_0%,#f4ebdc_100%)] p-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="rounded-xl border border-line bg-paper/70 p-5">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-600">
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-600">
             Total Amount
           </span>
-          <CreditCard className="h-5 w-5 text-primary-700" />
+          <CreditCard className="h-5 w-5 text-primary-600" />
         </div>
-        <p className="text-3xl font-bold text-neutral-900 sm:text-4xl">
+        <p className="text-3xl font-bold text-ink sm:text-4xl">
           ${amount.toFixed(2)}
         </p>
         <p className="mt-2 text-xs text-neutral-600">
@@ -80,7 +80,7 @@ export default function CheckoutForm({
         <label className="block text-sm font-semibold text-neutral-800">
           Payment Details
         </label>
-        <div className="rounded-2xl border border-line bg-white p-3 shadow-[0_8px_26px_rgba(20,17,15,0.06)] sm:p-4">
+        <div className="rounded-xl border border-line bg-white p-3 sm:p-4">
           <PaymentElement
             options={{
               layout: {
@@ -92,7 +92,7 @@ export default function CheckoutForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 rounded-xl border border-line bg-paper/65 p-3 sm:grid-cols-3">
         <div className="flex items-center gap-2 text-neutral-700">
           <Lock className="h-4 w-4" />
           <span className="text-xs font-medium">SSL Encrypted</span>

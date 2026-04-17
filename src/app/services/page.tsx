@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/layout/Navbar";
-import { Sparkles, Paintbrush, Wrench, Droplets, Bug, House, ArrowRight } from "lucide-react";
+import Footer from "@/components/layout/Footer";
+import { Sparkles, Paintbrush, Wrench, Droplets, Bug, House, ArrowUpRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -26,56 +27,63 @@ export default async function ServicesPage() {
     <div className="min-h-screen">
       <Navbar />
 
-      <main className="mx-auto w-full max-w-[86rem] px-4 pb-16 pt-10 xs:px-6 md:px-10">
-        <header className="mb-12 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-primary-700">Service Catalog</p>
-            <h1 className="mt-3 text-[clamp(2rem,6vw,4.8rem)] text-balance text-ink">Choose the craft your home needs today.</h1>
-          </div>
-          <p className="max-w-md text-base text-neutral-600">Each listing is created and managed by a provider. Pick a service, submit your details, and track progress from your dashboard.</p>
-        </header>
+      <main className="section-space pb-12">
+        <div className="page-shell">
+          <header className="mb-10 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-600">Service Catalog</p>
+              <h1 className="mt-3 text-[clamp(2rem,5vw,4.2rem)] text-balance text-ink">
+                Explore active services published by providers.
+              </h1>
+            </div>
+            <p className="self-end text-base text-neutral-700">
+              Every listing has a clear flow: submit request, pay provider price, and track service status end-to-end.
+            </p>
+          </header>
 
-        {services.length === 0 ? (
-          <section className="card py-16 text-center">
-            <h2 className="text-3xl text-ink">No active services right now</h2>
-            <p className="mx-auto mt-3 max-w-xl text-neutral-600">Providers are updating their offerings. Please check again shortly.</p>
-          </section>
-        ) : (
-          <section className="space-y-5">
-            {services.map((service, index) => {
-              const Icon = iconMap[service.icon || "home"] || House;
-              const reverse = index % 2 === 1;
-
-              return (
-                <Link key={service.id} href={`/services/${service.id}/book`} className="group block">
-                  <article className="relative overflow-hidden rounded-[1.75rem] border border-line/80 bg-white/75 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-premium md:p-8">
-                    <div className={`grid gap-6 md:grid-cols-[auto_1fr_auto] md:items-center ${reverse ? "md:[&>*:nth-child(2)]:order-3 md:[&>*:nth-child(3)]:order-2" : ""}`}>
-                      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[linear-gradient(135deg,#c4492d,#2f7a66)] text-paper shadow-soft md:h-20 md:w-20">
-                        <Icon className="h-7 w-7 md:h-9 md:w-9" />
+          {services.length === 0 ? (
+            <section className="card py-14 text-center">
+              <h2 className="text-3xl text-ink">No active services available</h2>
+              <p className="mx-auto mt-3 max-w-xl text-neutral-600">
+                Providers are updating listings. Please check again shortly.
+              </p>
+            </section>
+          ) : (
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {services.map((service) => {
+                const Icon = iconMap[service.icon || "home"] || House;
+                return (
+                  <Link key={service.id} href={`/services/${service.id}/book`} className="group block">
+                    <article className="card-hover h-full">
+                      <div className="inline-flex rounded-lg border border-line bg-paper p-2">
+                        <Icon className="h-5 w-5 text-primary-700" />
                       </div>
-
-                      <div>
-                        <h2 className="text-3xl text-ink md:text-4xl">{service.name}</h2>
-                        <p className="mt-3 max-w-2xl text-neutral-600">{service.description}</p>
-                        {service.price && (
-                          <p className="mt-4 inline-flex rounded-full border border-primary-300/55 bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700">
+                      <h2 className="mt-5 text-2xl text-ink">{service.name}</h2>
+                      <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-neutral-700">{service.description}</p>
+                      <div className="mt-5 flex items-center justify-between gap-3 border-t border-line/80 pt-4">
+                        {service.price ? (
+                          <p className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
                             {service.price}
                           </p>
+                        ) : (
+                          <p className="text-xs font-semibold text-neutral-500">Quoted by provider</p>
                         )}
+                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-accent-700">
+                          Book
+                          <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </span>
                       </div>
-
-                      <div className="inline-flex items-center gap-2 self-start rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold text-neutral-700 transition group-hover:border-accent-600 group-hover:text-accent-700 md:self-center">
-                        Book now
-                        <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                      </div>
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
-          </section>
-        )}
+                    </article>
+                  </Link>
+                );
+              })}
+            </section>
+          )}
+        </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
+

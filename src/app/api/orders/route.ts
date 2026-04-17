@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { censorAbusiveLanguage } from "@/lib/moderation";
 
 function parseServicePrice(price: string | null | undefined) {
   if (!price) return null;
@@ -15,28 +16,28 @@ async function isLocationEligible(
   area: string | null | undefined,
   pincode: string | null | undefined
 ) {
-  const orConditions: Record<string, unknown>[] = [];
-  if (pincode) orConditions.push({ pincode });
-  if (city) {
-    orConditions.push({
-      city: {
-        equals: city,
-        mode: "insensitive" as const,
-      },
-    });
-  }
-  if (area) {
-    orConditions.push({
-      area: {
-        equals: area,
-        mode: "insensitive" as const,
-      },
-    });
-  }
+  const normalizedCity = city?.trim();
+  const normalizedPincode = pincode?.trim();
+  const normalizedArea = area?.trim();
 
-  if (orConditions.length === 0) return false;
+  if (!normalizedCity || !normalizedPincode) return false;
 
-  const baseWhere = { active: true, OR: orConditions };
+  const baseWhere = {
+    active: true,
+    city: {
+      equals: normalizedCity,
+      mode: "insensitive" as const,
+    },
+    pincode: normalizedPincode,
+    ...(normalizedArea
+      ? {
+          area: {
+            equals: normalizedArea,
+            mode: "insensitive" as const,
+          },
+        }
+      : {}),
+  };
 
   if (providerId) {
     const p = prisma as unknown as {
@@ -89,6 +90,15 @@ export async function POST(request: Request) {
       images,
     } = body;
 
+    const safeImages = Array.isArray(images)
+      ? images
+          .filter(
+            (img: unknown): img is string =>
+              typeof img === "string" && /^https?:\/\//i.test(img)
+          )
+          .slice(0, 5)
+      : [];
+
     // Validate required fields
     if (!serviceId || !address || !description) {
       return NextResponse.json(
@@ -96,9 +106,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    if (!city && !area && !pincode) {
+    if (!city || !pincode) {
       return NextResponse.json(
-        { error: "At least one of city, area, or pincode is required" },
+        { error: "City and pincode/zipcode are required" },
         { status: 400 }
       );
     }
@@ -153,7 +163,7 @@ export async function POST(request: Request) {
         amount,
         currency: "usd",
         scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-        images: images || [],
+        images: safeImages,
         status: "PROCESSING",
       },
       include: {
@@ -202,7 +212,17 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(orders);
+    const sanitizedOrders = orders.map((order) => ({
+      ...order,
+      review: order.review
+        ? {
+            ...order.review,
+            comment: censorAbusiveLanguage(order.review.comment),
+          }
+        : null,
+    }));
+
+    return NextResponse.json(sanitizedOrders);
   } catch (error) {
     console.error("Orders fetch error:", error);
     return NextResponse.json(

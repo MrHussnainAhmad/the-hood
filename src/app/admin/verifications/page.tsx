@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { toast } from "sonner";
+import { BadgeCheck, FileText } from "lucide-react";
 
 interface VerificationItem {
   id: string;
@@ -32,6 +33,11 @@ export default function AdminVerificationsPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to fetch verifications");
       setItems(data);
+      window.dispatchEvent(
+        new CustomEvent("admin:verifications-seen", {
+          detail: { count: Array.isArray(data) ? data.length : 0 },
+        })
+      );
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to fetch verifications";
       toast.error(message);
@@ -66,48 +72,63 @@ export default function AdminVerificationsPage() {
       return;
     }
     toast.success(status === "VERIFIED" ? "Verification approved" : "Verification rejected");
-    setItems((prev) => prev.filter((x) => x.id !== item.id));
+    setItems((prev) => {
+      const next = prev.filter((x) => x.id !== item.id);
+      window.dispatchEvent(
+        new CustomEvent("admin:verifications-seen", {
+          detail: { count: next.length },
+        })
+      );
+      return next;
+    });
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-display font-bold text-neutral-900 mb-2">Verifications</h1>
-      <p className="text-neutral-600 mb-6">Pending company verification submissions.</p>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <header className="mb-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-600">Admin Verifications</p>
+        <h1 className="mt-3 text-[clamp(1.6rem,3vw,2.5rem)] text-ink">Company Verification Queue</h1>
+        <p className="mt-2 text-sm text-neutral-600">Review company provider submissions and approve or reject with notes.</p>
+      </header>
 
       {isLoading ? (
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent-600" />
+        <div className="grid min-h-[220px] place-items-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-600" />
+        </div>
       ) : items.length === 0 ? (
         <div className="card text-center text-neutral-600">No pending verification alerts.</div>
       ) : (
-        <div className="space-y-4">
+        <section className="space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="card">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <article key={item.id} className="card">
+              <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
                 <div className="space-y-1 text-sm">
-                  <p className="font-semibold text-neutral-900">{item.name || "Unnamed"}</p>
+                  <p className="text-xl text-ink">{item.name || "Unnamed"}</p>
                   <p className="text-neutral-600">{item.email}</p>
-                  {item.companyName && <p>Company: {item.companyName}</p>}
-                  {item.companyRegistrationNumber && <p>Reg#: {item.companyRegistrationNumber}</p>}
-                  {item.companyTaxId && <p>Tax ID: {item.companyTaxId}</p>}
-                  {item.companyAddress && <p>Address: {item.companyAddress}</p>}
-                  {item.companyContactName && <p>Contact: {item.companyContactName}</p>}
-                  {item.companyContactPhone && <p>Phone: {item.companyContactPhone}</p>}
-                  <div className="pt-1 flex flex-wrap gap-2">
+                  {item.companyName && <p><span className="font-semibold">Company:</span> {item.companyName}</p>}
+                  {item.companyRegistrationNumber && <p><span className="font-semibold">Registration:</span> {item.companyRegistrationNumber}</p>}
+                  {item.companyTaxId && <p><span className="font-semibold">Tax ID:</span> {item.companyTaxId}</p>}
+                  {item.companyAddress && <p><span className="font-semibold">Address:</span> {item.companyAddress}</p>}
+                  {item.companyContactName && <p><span className="font-semibold">Contact:</span> {item.companyContactName}</p>}
+                  {item.companyContactPhone && <p><span className="font-semibold">Phone:</span> {item.companyContactPhone}</p>}
+                  <div className="pt-2 flex flex-wrap gap-2">
                     {item.companyVerificationFiles?.map((file, idx) => (
                       <a
                         key={idx}
                         href={file}
                         target="_blank"
                         rel="noreferrer"
-                        className="underline text-blue-700 text-xs"
+                        className="inline-flex items-center gap-1 rounded-full border border-line bg-paper px-2.5 py-1 text-xs font-semibold text-neutral-700 hover:bg-white"
                       >
-                        File {idx + 1}
+                        <FileText className="h-3.5 w-3.5" /> File {idx + 1}
                       </a>
                     ))}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 lg:max-w-[420px]">
+
+                <div className="flex w-full flex-col gap-2 lg:max-w-[360px]">
                   <Button size="sm" onClick={() => updateVerification(item, "VERIFIED")}>
+                    <BadgeCheck className="h-4 w-4" />
                     Verify
                   </Button>
                   <Input
@@ -116,21 +137,20 @@ export default function AdminVerificationsPage() {
                     onChange={(e) =>
                       setRejectReasonByUser((prev) => ({ ...prev, [item.id]: e.target.value }))
                     }
-                    className="min-w-[220px]"
                   />
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-red-600 border-red-200"
+                    className="border-rose-200 text-rose-700"
                     onClick={() => updateVerification(item, "REJECTED")}
                   >
                     Reject
                   </Button>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
-        </div>
+        </section>
       )}
     </div>
   );

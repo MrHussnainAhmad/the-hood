@@ -21,7 +21,7 @@ export default async function AdminLayout({
   return (
     <>
       <AdminMobileBlock />
-      <div className="min-h-screen bg-neutral-50">
+      <div className="min-h-screen">
         <AdminMobileNav />
         <div className="flex">
           <AdminSidebar />

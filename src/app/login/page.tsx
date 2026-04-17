@@ -1,19 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import {
-  Home,
-  Mail,
-  Lock,
-  Sparkles,
-  Shield,
-  Clock,
-  CheckCircle2,
-} from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Home, Lock, Mail, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -25,6 +17,7 @@ export default function LoginPage() {
     remember: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -45,7 +38,6 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -61,24 +53,18 @@ export default function LoginPage() {
       if (result?.error) {
         toast.error("Invalid email or password");
       } else {
-        // Fetch session to check user role
         const response = await fetch("/api/auth/session");
         const session = await response.json();
 
-        toast.success("Welcome back!");
+        toast.success("Welcome back");
 
-        // Redirect based on role
-        if (session?.user?.role === "ADMIN") {
-          router.push("/admin");
-        } else if (session?.user?.role === "PROVIDER") {
-          router.push("/provider");
-        } else {
-          router.push("/dashboard");
-        }
+        if (session?.user?.role === "ADMIN") router.push("/admin");
+        else if (session?.user?.role === "PROVIDER") router.push("/provider");
+        else router.push("/dashboard");
 
         router.refresh();
       }
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
@@ -86,250 +72,120 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 relative overflow-hidden">
-      {/* Background Decorations */}
-      <div className="absolute top-0 right-0 -z-10 transform translate-x-1/3 -translate-y-1/3">
-        <div className="w-[600px] h-[600px] bg-gradient-to-br from-primary-400/20 to-accent-400/20 rounded-full blur-3xl"></div>
-      </div>
-      <div className="absolute bottom-0 left-0 -z-10 transform -translate-x-1/3 translate-y-1/3">
-        <div className="w-[600px] h-[600px] bg-gradient-to-tr from-accent-400/20 to-primary-400/20 rounded-full blur-3xl"></div>
-      </div>
+    <div className="min-h-screen bg-paper">
+      <main className="mx-auto grid min-h-screen max-w-[88rem] items-stretch gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-10">
+        <section className="relative hidden rounded-2xl border border-line/70 bg-[linear-gradient(165deg,#121417,#2f353b)] p-10 text-white lg:block">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-white/15">
+              <Home className="h-5 w-5" />
+            </span>
+            <span className="font-display text-3xl">The Hood</span>
+          </Link>
 
-      <div className="flex min-h-screen">
-        {/* Left Side - Branding (Hidden on mobile) */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 to-accent-600 p-12 flex-col justify-between relative overflow-hidden">
-          {/* Pattern Overlay */}
-          <div className="absolute inset-0 opacity-10">
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-              }}
-            ></div>
+          <div className="mt-16">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">Secure Access</p>
+            <h1 className="mt-4 max-w-xl text-[clamp(2rem,4vw,3.5rem)] leading-tight">
+              Continue managing services and orders in one workspace.
+            </h1>
           </div>
 
-          <div className="relative z-10">
-            <Link href="/" className="flex items-center gap-3 text-white mb-12">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center">
-                <Home className="w-7 h-7 text-white" />
-              </div>
-              <span className="text-3xl font-display font-bold">Hood</span>
-            </Link>
-
-            <div className="space-y-6">
-              <h1 className="text-5xl font-display font-bold text-white leading-tight">
-                Welcome Back to
-                <br />
-                Hood
-              </h1>
-              <p className="text-xl text-white/90 max-w-md">
-                Continue your journey with premium home services delivered with
-                excellence.
-              </p>
+          <div className="mt-12 grid gap-4">
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <p className="text-sm font-semibold">Role-aware dashboard routing</p>
+              <p className="mt-1 text-sm text-white/70">Consumer, provider and admin are redirected automatically.</p>
+            </div>
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <p className="text-sm font-semibold">Session persistence</p>
+              <p className="mt-1 text-sm text-white/70">Keep users signed in with the 30-day remember toggle.</p>
             </div>
           </div>
+        </section>
 
-          <div className="relative z-10 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-lg flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-1">
-                  Premium Services
-                </h3>
-                <p className="text-white/80 text-sm">
-                  Access to top-rated professionals
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-lg flex items-center justify-center flex-shrink-0">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-1">Secure & Safe</h3>
-                <p className="text-white/80 text-sm">
-                  Your data is protected with us
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-lg flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-1">Quick Booking</h3>
-                <p className="text-white/80 text-sm">
-                  Book services in under 2 minutes
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side - Form */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
+        <section className="flex items-center justify-center rounded-2xl border border-line/70 bg-white/75 p-6 sm:p-8 lg:p-10">
           <div className="w-full max-w-md">
-            {/* Mobile Logo */}
-            <Link
-              href="/"
-              className="lg:hidden flex items-center justify-center gap-2 mb-8"
-            >
-              <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Home className="w-7 h-7 text-white" />
-              </div>
-              <span className="text-3xl font-display font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                Hood
-              </span>
+            <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-neutral-700 lg:hidden">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
             </Link>
 
-            {/* Form Card */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-full mb-4">
-                  <CheckCircle2 className="w-4 h-4 text-primary-600" />
-                  <span className="text-sm font-medium text-primary-700">
-                    Secure Login
-                  </span>
-                </div>
-                <h2 className="text-3xl font-display font-bold text-neutral-900 mb-2">
-                  Sign In
-                </h2>
-                <p className="text-neutral-600">Access your Hood account</p>
-              </div>
+            <div className="mb-7">
+              <p className="inline-flex items-center gap-2 rounded-full border border-accent-200 bg-accent-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.13em] text-accent-700">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Sign In
+              </p>
+              <h2 className="mt-4 text-4xl text-ink">Welcome back</h2>
+              <p className="mt-2 text-sm text-neutral-600">Access your account to continue service workflows.</p>
+            </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-neutral-400" />
-                    </div>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 ${
-                        errors.email
-                          ? "border-red-300 bg-red-50"
-                          : "border-neutral-200 bg-white"
-                      } focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all`}
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                      <span className="w-1 h-1 bg-red-600 rounded-full"></span>
-                      {errors.email}
-                    </p>
-                  )}
-                </div>
-
-                {/* Password */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-semibold text-neutral-700">
-                      Password
-                    </label>
-                    <a
-                      href="#"
-                      className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
-                    >
-                      Forgot?
-                    </a>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-neutral-400" />
-                    </div>
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 ${
-                        errors.password
-                          ? "border-red-300 bg-red-50"
-                          : "border-neutral-200 bg-white"
-                      } focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all`}
-                      placeholder="Enter your password"
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                      <span className="w-1 h-1 bg-red-600 rounded-full"></span>
-                      {errors.password}
-                    </p>
-                  )}
-                </div>
-
-                {/* Remember Me */}
-                <div className="flex items-center">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
                   <input
-                    id="remember"
-                    type="checkbox"
-                    checked={formData.remember}
-                    onChange={(e) =>
-                      setFormData({ ...formData, remember: e.target.checked })
-                    }
-                    className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2"
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className={`input-field focus-ring pl-10 ${errors.email ? "border-red-500 bg-red-50/40" : ""}`}
+                    placeholder="you@example.com"
                   />
-                  <label
-                    htmlFor="remember"
-                    className="ml-2 text-sm text-neutral-700"
-                  >
-                    Remember me for 30 days
-                  </label>
                 </div>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full mt-6 py-4 text-base font-semibold"
-                  size="lg"
-                  isLoading={isLoading}
-                >
-                  Sign In
-                </Button>
-              </form>
-
-              {/* Footer */}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-neutral-600">
-                  Don&apos;t have an account?{" "}
-                  <Link
-                    href="/register"
-                    className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-                  >
-                    Create one free
-                  </Link>
-                </p>
+                {errors.email && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.email}</p>}
               </div>
-            </div>
 
-            {/* Back to Home */}
-            <div className="text-center mt-6">
-              <Link
-                href="/"
-                className="text-sm text-neutral-600 hover:text-primary-600 transition-colors font-medium"
-              >
-                &larr; Back to Home
+              <div>
+                <label htmlFor="password" className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className={`input-field focus-ring pl-10 pr-11 ${errors.password ? "border-red-500 bg-red-50/40" : ""}`}
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="focus-ring absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-neutral-500 hover:bg-paper"
+                    onClick={() => setShowPassword((s) => !s)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.password}</p>}
+              </div>
+
+              <label className="mt-1 inline-flex min-h-11 items-center gap-2 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={formData.remember}
+                  onChange={(e) => setFormData({ ...formData, remember: e.target.checked })}
+                  className="h-4 w-4 rounded border-neutral-300 text-accent-600 focus:ring-accent-500"
+                />
+                Remember me for 30 days
+              </label>
+
+              <Button type="submit" className="mt-2 w-full" size="lg" isLoading={isLoading}>
+                Sign In
+              </Button>
+            </form>
+
+            <p className="mt-5 text-sm text-neutral-600">
+              Don&apos;t have an account?{" "}
+              <Link href="/register" className="font-semibold text-primary-700 hover:text-primary-800">
+                Create one
               </Link>
-            </div>
+            </p>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
-
-

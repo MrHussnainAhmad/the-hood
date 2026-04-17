@@ -16,6 +16,7 @@ import {
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { usePollingCount } from "@/lib/hooks/usePollingCount";
+import { useAdminVerificationBadge } from "@/lib/hooks/useAdminVerificationBadge";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -31,26 +32,26 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const verificationCount = usePollingCount({
     endpoint: "/api/admin/verifications/count",
+    pollMs: 8000,
   });
+  const verificationBadge = useAdminVerificationBadge(verificationCount.count, pathname);
 
   return (
     <div className="hidden md:flex md:flex-none md:w-64">
-      <div className="sticky top-0 flex h-screen w-64 min-w-64 max-w-64 flex-col bg-white border-r border-neutral-200">
+      <div className="sticky top-0 flex h-screen w-64 min-w-64 max-w-64 flex-col border-r border-line bg-[rgba(255,255,255,0.7)] backdrop-blur-sm">
         {/* Logo */}
-        <div className="flex items-center gap-2 h-16 px-6 border-b border-neutral-200">
-          <div className="w-10 h-10 bg-gradient-to-br from-accent-600 to-accent-700 rounded-lg flex items-center justify-center">
-            <Home className="w-6 h-6 text-white" />
+        <div className="flex h-16 items-center gap-2 border-b border-line px-6">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-ink text-paper">
+            <Home className="h-5 w-5" />
           </div>
           <div>
-            <span className="text-xl font-display font-bold bg-gradient-to-r from-accent-600 to-accent-700 bg-clip-text text-transparent">
-              Hood
-            </span>
-            <p className="text-xs text-neutral-500">Admin Panel</p>
+            <span className="text-xl font-display text-ink">The Hood</span>
+            <p className="text-xs uppercase tracking-[0.1em] text-neutral-500">Admin Panel</p>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -58,18 +59,18 @@ export default function AdminSidebar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all",
+                  "flex min-h-11 items-center gap-3 rounded-lg px-4 font-semibold transition-all",
                   isActive
-                    ? "bg-accent-50 text-accent-700"
-                    : "text-neutral-700 hover:bg-neutral-50"
+                    ? "bg-white text-ink shadow-soft"
+                    : "text-neutral-700 hover:bg-white/70"
                 )}
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.name}</span>
                 {item.href === "/admin/verifications" &&
-                  verificationCount.hasBadge && (
-                    <span className="ml-auto inline-flex min-w-6 justify-center rounded-full bg-accent-600 px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-white">
-                      {verificationCount.label}
+                  verificationBadge.hasBadge && (
+                    <span className="ml-auto inline-flex min-w-6 justify-center rounded-full bg-primary-600 px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-white">
+                      {verificationBadge.label}
                     </span>
                   )}
               </Link>
@@ -78,17 +79,17 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-neutral-200">
+        <div className="border-t border-line p-4">
           <Link
             href="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-neutral-700 hover:bg-neutral-50 font-medium transition-all mb-2"
+            className="mb-2 flex min-h-11 items-center gap-3 rounded-lg px-4 font-semibold text-neutral-700 transition-all hover:bg-white/70"
           >
             <Home className="w-5 h-5" />
             Back to Site
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-700 hover:bg-red-50 font-medium transition-all"
+            className="flex min-h-11 w-full items-center gap-3 rounded-lg px-4 font-semibold text-rose-700 transition-all hover:bg-rose-50"
           >
             <LogOut className="w-5 h-5" />
             Sign Out

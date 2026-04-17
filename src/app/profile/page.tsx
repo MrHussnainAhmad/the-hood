@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { User, Mail, Phone, MapPin, Save } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,8 +33,8 @@ export default function ProfilePage() {
       }
 
       await update();
-      toast.success("Profile updated successfully!");
-    } catch (error) {
+      toast.success("Profile updated successfully");
+    } catch {
       toast.error("Failed to update profile");
     } finally {
       setIsLoading(false);
@@ -43,142 +42,108 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen">
       <Navbar />
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-neutral-900 mb-2">
-            My Profile
-          </h1>
-          <p className="text-neutral-600">
-            Manage your account information
-          </p>
-        </div>
+      <main className="section-space pb-12">
+        <div className="page-shell max-w-3xl">
+          <header className="mb-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-600">Account</p>
+            <h1 className="mt-3 text-[clamp(1.6rem,3vw,2.5rem)] text-ink">My Profile</h1>
+            <p className="mt-2 text-sm text-neutral-600">Manage personal details used across bookings and services.</p>
+          </header>
 
-        <div className="card">
-          {/* Avatar Section */}
-          <div className="flex items-center gap-6 pb-6 border-b border-neutral-200 mb-6">
-            <div className="w-24 h-24 bg-gradient-to-br from-primary-600 to-accent-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-              {session?.user?.name?.charAt(0).toUpperCase() || "U"}
-            </div>
-            <div>
-              <h2 className="text-2xl font-display font-semibold text-neutral-900">
-                {session?.user?.name}
-              </h2>
-              <p className="text-neutral-600">{session?.user?.email}</p>
-              <span className="inline-block mt-2 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
-                {session?.user?.role}
-              </span>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <section className="card">
+            <div className="mb-6 flex items-center gap-4 border-b border-line pb-6">
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-ink text-3xl font-bold text-paper">
+                {session?.user?.name?.charAt(0).toUpperCase() || "U"}
+              </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-neutral-400" />
+                <h2 className="text-2xl text-ink">{session?.user?.name}</h2>
+                <p className="text-sm text-neutral-600">{session?.user?.email}</p>
+                <span className="mt-2 inline-flex rounded-full border border-line bg-paper px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-700">
+                  {session?.user?.role}
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Full Name</label>
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="input-field pl-10"
+                    />
                   </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Email</label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                    <input type="email" value={formData.email} disabled className="input-field cursor-not-allowed bg-paper pl-10" />
+                  </div>
+                  <p className="mt-1 text-xs text-neutral-500">Email cannot be changed.</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Phone</label>
+                <div className="relative">
+                  <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
                   <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="input-field pl-12"
-                    placeholder="John Doe"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="input-field pl-10"
+                    placeholder="Phone number"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Email Address
-                </label>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Address</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-neutral-400" />
-                  </div>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    disabled
-                    className="input-field pl-12 bg-neutral-50 cursor-not-allowed"
+                  <MapPin className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+                  <textarea
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="input-field min-h-[100px] pl-10"
+                    placeholder="Address"
                   />
                 </div>
-                <p className="mt-1 text-xs text-neutral-500">
-                  Email cannot be changed
-                </p>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Phone Number
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-neutral-400" />
-                </div>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
+              <div className="flex justify-end gap-2 border-t border-line pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    setFormData({
+                      name: session?.user?.name || "",
+                      email: session?.user?.email || "",
+                      phone: "",
+                      address: "",
+                    })
                   }
-                  className="input-field pl-12"
-                  placeholder="(555) 123-4567"
-                />
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" isLoading={isLoading}>
+                  <Save className="h-4 w-4" />
+                  Save Changes
+                </Button>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Address
-              </label>
-              <div className="relative">
-                <div className="absolute top-3 left-0 pl-4 flex items-start pointer-events-none">
-                  <MapPin className="h-5 w-5 text-neutral-400" />
-                </div>
-                <textarea
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  className="input-field pl-12 min-h-[100px]"
-                  placeholder="123 Main St, City, State 12345"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-4 pt-6 border-t border-neutral-200">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  setFormData({
-                    name: session?.user?.name || "",
-                    email: session?.user?.email || "",
-                    phone: "",
-                    address: "",
-                  })
-                }
-              >
-                Cancel
-              </Button>
-              <Button type="submit" isLoading={isLoading}>
-                <Save className="w-5 h-5" />
-                Save Changes
-              </Button>
-            </div>
-          </form>
+            </form>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
+

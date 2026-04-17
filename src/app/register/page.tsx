@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Home, Mail, Lock, User, Phone, CheckCircle2, Sparkles } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, Eye, EyeOff, Home, Lock, Mail, Phone, User } from "lucide-react";
 import { toast } from "sonner";
 
 export default function RegisterPage() {
@@ -20,6 +20,8 @@ export default function RegisterPage() {
     providerEmployeeRange: "1",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -60,7 +62,6 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -86,432 +87,234 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success("Account created successfully!");
+      toast.success("Account created successfully");
       router.push("/login");
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getPasswordStrength = () => {
-    const password = formData.password;
-    if (password.length === 0) return null;
-    if (password.length < 6) return { label: "Weak", color: "bg-red-500", width: "33%" };
-    if (password.length < 10) return { label: "Good", color: "bg-yellow-500", width: "66%" };
-    return { label: "Strong", color: "bg-green-500", width: "100%" };
-  };
-
-  const passwordStrength = getPasswordStrength();
+  const platformFee =
+    formData.providerEmployeeRange === "1"
+      ? "7%"
+      : formData.providerEmployeeRange === "2-5"
+      ? "10%"
+      : formData.providerEmployeeRange === "5-10"
+      ? "13%"
+      : "15%";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 relative overflow-hidden">
-      {/* Background Decorations */}
-      <div className="absolute top-0 right-0 -z-10 transform translate-x-1/3 -translate-y-1/3">
-        <div className="w-[600px] h-[600px] bg-gradient-to-br from-primary-400/20 to-accent-400/20 rounded-full blur-3xl"></div>
-      </div>
-      <div className="absolute bottom-0 left-0 -z-10 transform -translate-x-1/3 translate-y-1/3">
-        <div className="w-[600px] h-[600px] bg-gradient-to-tr from-accent-400/20 to-primary-400/20 rounded-full blur-3xl"></div>
-      </div>
+    <div className="min-h-screen bg-paper">
+      <main className="mx-auto grid min-h-screen max-w-[88rem] items-stretch gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_1fr] lg:px-10">
+        <section className="relative hidden rounded-2xl border border-line/70 bg-[linear-gradient(165deg,#2f5d50,#1f3d35)] p-10 text-white lg:block">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-white/15">
+              <Home className="h-5 w-5" />
+            </span>
+            <span className="font-display text-3xl">The Hood</span>
+          </Link>
 
-      <div className="flex min-h-screen">
-        {/* Left Side - Branding (Hidden on mobile) */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 to-accent-600 p-12 flex-col justify-between relative overflow-hidden">
-          {/* Pattern Overlay */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}></div>
+          <div className="mt-14">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Onboarding</p>
+            <h1 className="mt-4 max-w-xl text-[clamp(2rem,4vw,3.6rem)] leading-tight">
+              Build your account as consumer or provider in one flow.
+            </h1>
+            <p className="mt-4 max-w-lg text-sm text-white/80">
+              Provider tiering, company verification and platform fee structure are built into registration.
+            </p>
           </div>
 
-          <div className="relative z-10">
-            <Link href="/" className="flex items-center gap-3 text-white mb-12">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center">
-                <Home className="w-7 h-7 text-white" />
-              </div>
-              <span className="text-3xl font-display font-bold">Hood</span>
+          <div className="mt-12 grid gap-4">
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <p className="text-sm font-semibold">Provider Team Brackets</p>
+              <p className="mt-1 text-sm text-white/75">1, 2-5, 5-10, 10+ (company)</p>
+            </div>
+            <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+              <p className="text-sm font-semibold">Company Verification Flow</p>
+              <p className="mt-1 text-sm text-white/75">10+ providers submit documents post-signup for admin review.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="flex items-center justify-center rounded-2xl border border-line/70 bg-white/75 p-6 sm:p-8 lg:p-10">
+          <div className="w-full max-w-xl">
+            <Link href="/" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-neutral-700 lg:hidden">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
             </Link>
 
-            <div className="space-y-6">
-              <h1 className="text-5xl font-display font-bold text-white leading-tight">
-                Join the Hood<br />Community
-              </h1>
-              <p className="text-xl text-white/90 max-w-md">
-                Get access to premium home services with verified professionals at your doorstep.
+            <div className="mb-6">
+              <p className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.13em] text-primary-700">
+                <BriefcaseBusiness className="h-3.5 w-3.5" />
+                Create Account
               </p>
-            </div>
-          </div>
-
-          <div className="relative z-10 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-lg flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-1">Verified Professionals</h3>
-                <p className="text-white/80 text-sm">All service providers are background checked</p>
-              </div>
+              <h2 className="mt-4 text-4xl text-ink">Join The Hood</h2>
+              <p className="mt-2 text-sm text-neutral-600">Set your profile and role to start booking or offering services.</p>
             </div>
 
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-lg flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-1">Money-Back Guarantee</h3>
-                <p className="text-white/80 text-sm">100% satisfaction or full refund</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-lg flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-1">24/7 Support</h3>
-                <p className="text-white/80 text-sm">Round the clock customer assistance</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side - Form */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
-          <div className="w-full max-w-md">
-            {/* Mobile Logo */}
-            <Link href="/" className="lg:hidden flex items-center justify-center gap-2 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Home className="w-7 h-7 text-white" />
-              </div>
-              <span className="text-3xl font-display font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-                Hood
-              </span>
-            </Link>
-
-            {/* Form Card */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-full mb-4">
-                  <Sparkles className="w-4 h-4 text-primary-600" />
-                  <span className="text-sm font-medium text-primary-700">Get Started Free</span>
-                </div>
-                <h2 className="text-3xl font-display font-bold text-neutral-900 mb-2">
-                  Create Account
-                </h2>
-                <p className="text-neutral-600">Join thousands of satisfied customers</p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Name */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                    Full Name
-                  </label>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Full Name</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-neutral-400" />
-                    </div>
+                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
                     <input
                       type="text"
                       value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 ${
-                        errors.name ? "border-red-300 bg-red-50" : "border-neutral-200 bg-white"
-                      } focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all`}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className={`input-field focus-ring pl-10 ${errors.name ? "border-red-500 bg-red-50/40" : ""}`}
                       placeholder="John Doe"
                     />
                   </div>
-                  {errors.name && (
-                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                      <span className="w-1 h-1 bg-red-600 rounded-full"></span>
-                      {errors.name}
-                    </p>
-                  )}
+                  {errors.name && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.name}</p>}
                 </div>
 
-                {/* Email */}
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                    Email Address
-                  </label>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Phone Number</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-neutral-400" />
-                    </div>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 ${
-                        errors.email ? "border-red-300 bg-red-50" : "border-neutral-200 bg-white"
-                      } focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all`}
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                      <span className="w-1 h-1 bg-red-600 rounded-full"></span>
-                      {errors.email}
-                    </p>
-                  )}
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Phone className="h-5 w-5 text-neutral-400" />
-                    </div>
+                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 ${
-                        errors.phone ? "border-red-300 bg-red-50" : "border-neutral-200 bg-white"
-                      } focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all`}
-                      placeholder="(555) 123-4567"
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className={`input-field focus-ring pl-10 ${errors.phone ? "border-red-500 bg-red-50/40" : ""}`}
+                      placeholder="03001234567"
                     />
                   </div>
-                  {errors.phone && (
-                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                      <span className="w-1 h-1 bg-red-600 rounded-full"></span>
-                      {errors.phone}
+                  {errors.phone && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.phone}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Email Address</label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className={`input-field focus-ring pl-10 ${errors.email ? "border-red-500 bg-red-50/40" : ""}`}
+                    placeholder="you@example.com"
+                  />
+                </div>
+                {errors.email && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.email}</p>}
+              </div>
+
+              <div>
+                <p className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Are You A</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: "CONSUMER" })}
+                    className={`focus-ring min-h-11 rounded-lg border px-3 text-sm font-semibold transition ${
+                      formData.role === "CONSUMER" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line bg-white text-neutral-700"
+                    }`}
+                  >
+                    Consumer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: "PROVIDER" })}
+                    className={`focus-ring min-h-11 rounded-lg border px-3 text-sm font-semibold transition ${
+                      formData.role === "PROVIDER" ? "border-accent-500 bg-accent-50 text-accent-700" : "border-line bg-white text-neutral-700"
+                    }`}
+                  >
+                    Provider
+                  </button>
+                </div>
+              </div>
+
+              {formData.role === "PROVIDER" && (
+                <div className="rounded-xl border border-line bg-neutral-50 p-4">
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Number of Employees</label>
+                  <select
+                    value={formData.providerEmployeeRange}
+                    onChange={(e) => setFormData({ ...formData, providerEmployeeRange: e.target.value })}
+                    className={`input-field focus-ring ${errors.providerEmployeeRange ? "border-red-500 bg-red-50/40" : ""}`}
+                  >
+                    <option value="1">1</option>
+                    <option value="2-5">2-5</option>
+                    <option value="5-10">5-10</option>
+                    <option value="10+">10+ (company)</option>
+                  </select>
+                  {errors.providerEmployeeRange && (
+                    <p className="mt-1.5 text-xs font-medium text-red-600">{errors.providerEmployeeRange}</p>
+                  )}
+                  <p className="mt-2 text-xs font-medium text-neutral-700">Platform fee for selected tier: {platformFee}</p>
+                  {formData.providerEmployeeRange === "10+" && (
+                    <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-800">
+                      Company providers must submit verification documents after registration.
                     </p>
                   )}
                 </div>
+              )}
 
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                    Are you a
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, role: "CONSUMER" })}
-                      className={`rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all ${
-                        formData.role === "CONSUMER"
-                          ? "border-primary-500 bg-primary-50 text-primary-700"
-                          : "border-neutral-200 bg-white text-neutral-700"
-                      }`}
-                    >
-                      Consumer
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormData({
-                          ...formData,
-                          role: "PROVIDER",
-                          providerEmployeeRange:
-                            formData.providerEmployeeRange || "1",
-                        })
-                      }
-                      className={`rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all ${
-                        formData.role === "PROVIDER"
-                          ? "border-primary-500 bg-primary-50 text-primary-700"
-                          : "border-neutral-200 bg-white text-neutral-700"
-                      }`}
-                    >
-                      Provider
-                    </button>
-                  </div>
-                </div>
-
-                {formData.role === "PROVIDER" && (
-                  <div className="space-y-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                        Number of employees
-                      </label>
-                      <select
-                        value={formData.providerEmployeeRange}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            providerEmployeeRange: e.target.value,
-                          })
-                        }
-                        className={`w-full px-4 py-3 rounded-xl border-2 ${
-                          errors.providerEmployeeRange
-                            ? "border-red-300 bg-red-50"
-                            : "border-neutral-200 bg-white"
-                        } focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all`}
-                      >
-                        <option value="1">1</option>
-                        <option value="2-5">2-5</option>
-                        <option value="5-10">5-10</option>
-                        <option value="10+">10+ (company)</option>
-                      </select>
-                      {errors.providerEmployeeRange && (
-                        <p className="mt-1.5 text-sm text-red-600">
-                          {errors.providerEmployeeRange}
-                        </p>
-                      )}
-                      <p className="mt-1.5 text-xs text-neutral-500">
-                        Platform fee:{" "}
-                        {formData.providerEmployeeRange === "1"
-                          ? "7%"
-                          : formData.providerEmployeeRange === "2-5"
-                          ? "10%"
-                          : formData.providerEmployeeRange === "5-10"
-                          ? "13%"
-                          : "15%"}
-                      </p>
-                    </div>
-
-                    {formData.providerEmployeeRange === "10+" && (
-                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                        Company providers must submit verification documents after signup in Provider Workspace.
-                      </div>
-                    )}
-
-                  </div>
-                )}
-
-                {/* Password */}
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                    Password
-                  </label>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Password</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-neutral-400" />
-                    </div>
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 ${
-                        errors.password ? "border-red-300 bg-red-50" : "border-neutral-200 bg-white"
-                      } focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all`}
-                      placeholder="Create a strong password"
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className={`input-field focus-ring pl-10 pr-11 ${errors.password ? "border-red-500 bg-red-50/40" : ""}`}
+                      placeholder="Minimum 6 characters"
                     />
+                    <button
+                      type="button"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="focus-ring absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-neutral-500 hover:bg-paper"
+                      onClick={() => setShowPassword((s) => !s)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
-                  {passwordStrength && (
-                    <div className="mt-2.5">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-neutral-600">Password strength</span>
-                        <span className={`text-xs font-semibold ${
-                          passwordStrength.label === "Weak" ? "text-red-600" :
-                          passwordStrength.label === "Good" ? "text-yellow-600" :
-                          "text-green-600"
-                        }`}>
-                          {passwordStrength.label}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${passwordStrength.color} transition-all duration-300 rounded-full`}
-                          style={{ width: passwordStrength.width }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {errors.password && (
-                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                      <span className="w-1 h-1 bg-red-600 rounded-full"></span>
-                      {errors.password}
-                    </p>
-                  )}
+                  {errors.password && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.password}</p>}
                 </div>
 
-                {/* Confirm Password */}
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                    Confirm Password
-                  </label>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.13em] text-neutral-600">Confirm Password</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-neutral-400" />
-                    </div>
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({ ...formData, confirmPassword: e.target.value })
-                      }
-                      className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 ${
-                        errors.confirmPassword ? "border-red-300 bg-red-50" : "border-neutral-200 bg-white"
-                      } focus:border-primary-500 focus:ring-4 focus:ring-primary-100 outline-none transition-all`}
-                      placeholder="Re-enter your password"
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      className={`input-field focus-ring pl-10 pr-11 ${errors.confirmPassword ? "border-red-500 bg-red-50/40" : ""}`}
+                      placeholder="Re-enter password"
                     />
-                    {formData.confirmPassword &&
-                      formData.password === formData.confirmPassword && (
-                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        </div>
-                      )}
+                    <button
+                      type="button"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      className="focus-ring absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-neutral-500 hover:bg-paper"
+                      onClick={() => setShowConfirmPassword((s) => !s)}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                   {errors.confirmPassword && (
-                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                      <span className="w-1 h-1 bg-red-600 rounded-full"></span>
-                      {errors.confirmPassword}
-                    </p>
+                    <p className="mt-1.5 text-xs font-medium text-red-600">{errors.confirmPassword}</p>
                   )}
                 </div>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full mt-6 py-4 text-base font-semibold"
-                  size="lg"
-                  isLoading={isLoading}
-                >
-                  Create Account
-                </Button>
-              </form>
-
-              {/* Footer */}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-neutral-600">
-                  Already have an account?{" "}
-                  <Link
-                    href="/login"
-                    className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-                  >
-                    Sign in
-                  </Link>
-                </p>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-neutral-200">
-                <p className="text-xs text-center text-neutral-500">
-                  By creating an account, you agree to our{" "}
-                  <a href="#" className="text-primary-600 hover:underline">
-                    Terms of Service
-                  </a>{" "}
-                  and{" "}
-                  <a href="#" className="text-primary-600 hover:underline">
-                    Privacy Policy
-                  </a>
-                </p>
-              </div>
-            </div>
+              <Button type="submit" size="lg" className="w-full" isLoading={isLoading}>
+                Create Account
+              </Button>
+            </form>
 
-            {/* Back to Home */}
-            <div className="text-center mt-6">
-              <Link
-                href="/"
-                className="text-sm text-neutral-600 hover:text-primary-600 transition-colors font-medium"
-              >
-                ← Back to Home
+            <p className="mt-5 text-sm text-neutral-600">
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold text-primary-700 hover:text-primary-800">
+                Sign in
               </Link>
-            </div>
+            </p>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

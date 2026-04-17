@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Plus, Edit, Trash2, MapPin, Eye, EyeOff, Search } from "lucide-react";
+import { Plus, Edit, Trash2, MapPin, Eye, EyeOff, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface Location {
@@ -17,7 +17,6 @@ interface Location {
 
 export default function LocationsManagement() {
   const [locations, setLocations] = useState<Location[]>([]);
-  const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -33,14 +32,13 @@ export default function LocationsManagement() {
     fetchLocations();
   }, []);
 
-  useEffect(() => {
-    const filtered = locations.filter(
+  const filteredLocations = useMemo(() => {
+    return locations.filter(
       (loc) =>
         loc.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
         loc.area?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         loc.pincode?.includes(searchTerm)
     );
-    setFilteredLocations(filtered);
   }, [searchTerm, locations]);
 
   const fetchLocations = async () => {
@@ -48,8 +46,7 @@ export default function LocationsManagement() {
       const response = await fetch("/api/admin/locations");
       const data = await response.json();
       setLocations(data);
-      setFilteredLocations(data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch locations");
     } finally {
       setIsLoading(false);
@@ -82,14 +79,12 @@ export default function LocationsManagement() {
         return;
       }
 
-      toast.success(
-        editingLocation ? "Location updated" : "Location added"
-      );
+      toast.success(editingLocation ? "Location updated" : "Location added");
       setShowModal(false);
       setEditingLocation(null);
       resetForm();
       fetchLocations();
-    } catch (error) {
+    } catch {
       toast.error("Failed to save location");
     }
   };
@@ -106,7 +101,7 @@ export default function LocationsManagement() {
         toast.success("Location deleted");
         fetchLocations();
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete location");
     }
   };
@@ -143,34 +138,21 @@ export default function LocationsManagement() {
       });
 
       if (response.ok) {
-        toast.success(
-          `Location ${!location.active ? "activated" : "deactivated"}`
-        );
+        toast.success(`Location ${!location.active ? "activated" : "deactivated"}`);
         fetchLocations();
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to update location");
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <header className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-display font-bold text-neutral-900 mb-2">
-            Locations Management
-          </h1>
-          <p className="text-neutral-600">
-            Manage service availability areas
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-600">Admin Locations</p>
+          <h1 className="mt-3 text-[clamp(1.6rem,3vw,2.5rem)] text-ink">Coverage Locations</h1>
+          <p className="mt-2 text-sm text-neutral-600">Manage cities, areas and pincodes available across platform.</p>
         </div>
         <Button
           onClick={() => {
@@ -179,123 +161,76 @@ export default function LocationsManagement() {
             setShowModal(true);
           }}
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="h-4 w-4" />
           Add Location
         </Button>
-      </div>
+      </header>
 
-      {/* Search */}
-      <div className="card mb-6">
+      <section className="card mb-6">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <Input
             type="text"
-            placeholder="Search by city, area, or pincode..."
+            placeholder="Search by city, area, pincode"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-12"
+            className="pl-10"
           />
         </div>
-      </div>
+      </section>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="card">
-          <p className="text-sm text-neutral-600 mb-1">Total Locations</p>
-          <p className="text-3xl font-bold text-neutral-900">
-            {locations.length}
-          </p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-neutral-600 mb-1">Active</p>
-          <p className="text-3xl font-bold text-green-600">
-            {locations.filter((l) => l.active).length}
-          </p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-neutral-600 mb-1">Inactive</p>
-          <p className="text-3xl font-bold text-neutral-400">
-            {locations.filter((l) => !l.active).length}
-          </p>
-        </div>
-      </div>
+      <section className="mb-6 grid gap-4 md:grid-cols-3">
+        <article className="card"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Total</p><p className="mt-2 text-4xl font-bold text-ink">{locations.length}</p></article>
+        <article className="card"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Active</p><p className="mt-2 text-4xl font-bold text-emerald-700">{locations.filter((l) => l.active).length}</p></article>
+        <article className="card"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Inactive</p><p className="mt-2 text-4xl font-bold text-neutral-400">{locations.filter((l) => !l.active).length}</p></article>
+      </section>
 
-      {/* Locations Table */}
-      <div className="card">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      {isLoading ? (
+        <div className="grid min-h-[220px] place-items-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-600" />
+        </div>
+      ) : (
+        <section className="card overflow-x-auto">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-200">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700">
-                  City
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700">
-                  Area
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700">
-                  Pincode
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700">
-                  Status
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700">
-                  Added
-                </th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700">
-                  Actions
-                </th>
+              <tr className="border-b border-line text-left text-neutral-600">
+                <th className="py-3 px-4 font-semibold">City</th>
+                <th className="py-3 px-4 font-semibold">Area</th>
+                <th className="py-3 px-4 font-semibold">Pincode</th>
+                <th className="py-3 px-4 font-semibold">Status</th>
+                <th className="py-3 px-4 font-semibold">Added</th>
+                <th className="py-3 px-4 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredLocations.map((location) => (
-                <tr key={location.id} className="border-b border-neutral-100">
+                <tr key={location.id} className="border-b border-line/70">
                   <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-primary-600" />
-                      <span className="font-medium text-neutral-900">
-                        {location.city}
-                      </span>
-                    </div>
+                    <div className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-primary-600" />{location.city}</div>
                   </td>
-                  <td className="py-4 px-4 text-neutral-600">
-                    {location.area || "—"}
-                  </td>
-                  <td className="py-4 px-4 text-neutral-600">
-                    {location.pincode || "—"}
-                  </td>
+                  <td className="py-4 px-4 text-neutral-600">{location.area || "-"}</td>
+                  <td className="py-4 px-4 text-neutral-600">{location.pincode || "-"}</td>
                   <td className="py-4 px-4">
                     <button
                       onClick={() => toggleActive(location)}
-                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      className={`inline-flex min-h-9 items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${
                         location.active
-                          ? "bg-green-100 text-green-700 hover:bg-green-200"
-                          : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-line bg-paper text-neutral-700"
                       }`}
                     >
-                      {location.active ? (
-                        <Eye className="w-3 h-3" />
-                      ) : (
-                        <EyeOff className="w-3 h-3" />
-                      )}
+                      {location.active ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                       {location.active ? "Active" : "Inactive"}
                     </button>
                   </td>
-                  <td className="py-4 px-4 text-neutral-600 text-sm">
-                    {new Date(location.createdAt).toLocaleDateString()}
-                  </td>
+                  <td className="py-4 px-4 text-neutral-600">{new Date(location.createdAt).toLocaleDateString()}</td>
                   <td className="py-4 px-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(location)}
-                        className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                      >
-                        <Edit className="w-4 h-4" />
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => openEditModal(location)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-line text-primary-700 hover:bg-primary-50">
+                        <Edit className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(location.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                      <button onClick={() => handleDelete(location.id)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50">
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -303,75 +238,54 @@ export default function LocationsManagement() {
               ))}
             </tbody>
           </table>
-        </div>
 
-        {filteredLocations.length === 0 && (
-          <div className="text-center py-12">
-            <MapPin className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-            <p className="text-neutral-600">No locations found</p>
-          </div>
-        )}
-      </div>
+          {filteredLocations.length === 0 && (
+            <div className="py-12 text-center text-neutral-600">No locations found.</div>
+          )}
+        </section>
+      )}
 
-      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-display font-bold mb-6">
-              {editingLocation ? "Edit Location" : "Add Location"}
-            </h2>
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 backdrop-blur-[2px]">
+          <div className="mx-auto mt-8 max-w-md rounded-xl border border-line bg-white p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-2xl text-ink">{editingLocation ? "Edit Location" : "Add Location"}</h2>
+              <button onClick={() => setShowModal(false)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-line">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
-                label="City *"
+                label="City"
                 value={formData.city}
-                onChange={(e) =>
-                  setFormData({ ...formData, city: e.target.value })
-                }
-                placeholder="New York"
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                placeholder="City"
                 required
               />
               <Input
-                label="Area/District"
+                label="Area"
                 value={formData.area}
-                onChange={(e) =>
-                  setFormData({ ...formData, area: e.target.value })
-                }
-                placeholder="Manhattan"
+                onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                placeholder="Area or district"
               />
               <Input
-                label="Pincode/ZIP"
+                label="Pincode"
                 value={formData.pincode}
-                onChange={(e) =>
-                  setFormData({ ...formData, pincode: e.target.value })
-                }
-                placeholder="10001"
+                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                placeholder="Code"
               />
-              <div className="flex items-center gap-2">
+              <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-line bg-paper px-3 text-sm text-neutral-700">
                 <input
                   type="checkbox"
-                  id="active"
                   checked={formData.active}
-                  onChange={(e) =>
-                    setFormData({ ...formData, active: e.target.checked })
-                  }
-                  className="w-4 h-4 text-primary-600 rounded"
+                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
                 />
-                <label htmlFor="active" className="text-sm text-neutral-700">
-                  Active
-                </label>
-              </div>
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1">
-                  {editingLocation ? "Update" : "Add"}
-                </Button>
+                Active
+              </label>
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="flex-1">Cancel</Button>
+                <Button type="submit" className="flex-1">{editingLocation ? "Update" : "Add"}</Button>
               </div>
             </form>
           </div>
@@ -380,3 +294,4 @@ export default function LocationsManagement() {
     </div>
   );
 }
+

@@ -9,7 +9,6 @@ export default withAuth(
                        req.nextUrl.pathname.startsWith("/register");
     const isAdminPage = req.nextUrl.pathname.startsWith("/admin");
     const isProviderPage = req.nextUrl.pathname.startsWith("/provider");
-    const isProviderVerificationPage = req.nextUrl.pathname.startsWith("/provider/verification");
     const isDashboard = req.nextUrl.pathname.startsWith("/dashboard");
     const isBookPage = req.nextUrl.pathname.includes("/book");
 
@@ -41,16 +40,6 @@ export default withAuth(
 
     if (isProviderPage && token?.role !== "PROVIDER") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-
-    if (
-      req.nextUrl.pathname === "/provider" &&
-      token?.role === "PROVIDER" &&
-      token?.providerEmployeeRange === "10+" &&
-      token?.companyVerificationStatus !== "VERIFIED" &&
-      !isProviderVerificationPage
-    ) {
-      return NextResponse.redirect(new URL("/provider/verification", req.url));
     }
 
     // Redirect admin from user dashboard to admin panel
