@@ -77,7 +77,7 @@ Install the following before running the project:
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/MrHussnainAhmad/the-hood.git
+git clone [https://github.com/your-username/thehood.git](https://github.com/MrHussnainAhmad/the-hood.git)
 cd thehood
 npm install
 ```
