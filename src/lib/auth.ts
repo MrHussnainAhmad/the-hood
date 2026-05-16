@@ -28,6 +28,7 @@ export const authOptions: NextAuthOptions = {
             email: true,
             name: true,
             password: true,
+            emailVerified: true,
             role: true,
             isBanned: true,
             providerEmployeeRange: true,
@@ -41,6 +42,9 @@ export const authOptions: NextAuthOptions = {
 
         if (user.isBanned) {
           throw new Error("Your account is banned. Please contact support.");
+        }
+        if (user.role !== "ADMIN" && !user.emailVerified) {
+          throw new Error("Please verify your email before signing in.");
         }
 
         const isCorrectPassword = await bcrypt.compare(

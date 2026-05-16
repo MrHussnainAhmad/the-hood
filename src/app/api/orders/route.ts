@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { censorAbusiveLanguage } from "@/lib/moderation";
+import { renderProviderOrderReceivedEmail, sendEmail } from "@/lib/email";
 
 function parseServicePrice(price: string | null | undefined) {
   if (!price) return null;
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
 
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
-      select: { providerId: true, active: true, price: true },
+      select: { providerId: true, active: true, price: true, name: true },
     });
 
     if (!service || !service.active) {
@@ -178,6 +179,23 @@ export async function POST(request: Request) {
       },
     });
 
+    const provider = await prisma.user.findUnique({
+      where: { id: service.providerId },
+      select: { email: true, name: true },
+    });
+
+    if (provider?.email) {
+      await sendEmail({
+        to: provider.email,
+        subject: "New order received - The Hood",
+        html: renderProviderOrderReceivedEmail({
+          providerName: provider.name || "Provider",
+          orderId: order.id,
+          serviceName: service.name,
+        }),
+      }).catch((error) => console.error("Provider new order email error:", error));
+    }
+
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error("Order creation error:", error);
@@ -212,7 +230,7 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    const sanitizedOrders = orders.map((order) => ({
+    const sanitizedOrders = orders.map((order: (typeof orders)[number]) => ({
       ...order,
       review: order.review
         ? {

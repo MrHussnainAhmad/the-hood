@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Star, Quote, House, Paintbrush, Wrench, Droplets, Sparkles, Bug } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -20,10 +20,27 @@ const iconMap: Record<string, LucideIcon> = {
   droplet: Droplets,
   bug: Bug,
   home: House,
+  electrician: Wrench,
+  "ac-service": Wrench,
+  carpenter: Wrench,
+  "tile-marble": House,
+  "deep-cleaning": Sparkles,
+  "sofa-cleaning": Sparkles,
+  "water-tank-cleaning": Droplets,
+  "generator-repair": Wrench,
+  "inverter-installation": Wrench,
+  "cctv-installation": House,
+  "ro-water-filter": Droplets,
+  handyman: Wrench,
+  "bike-service": Wrench,
+  "car-detailing": Sparkles,
+  "movers-packers": House,
 };
 
 export default function ReviewsSection() {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [average, setAverage] = useState("0.0");
+  const [totalReviews, setTotalReviews] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -31,8 +48,14 @@ export default function ReviewsSection() {
       try {
         const response = await fetch("/api/reviews/latest", { cache: "no-store" });
         if (response.ok) {
-          const data = (await response.json()) as Review[];
-          setReviews(data);
+          const data = (await response.json()) as {
+            latestReviews: Review[];
+            averageRating: number;
+            totalReviews: number;
+          };
+          setReviews(data.latestReviews || []);
+          setAverage(Number(data.averageRating || 0).toFixed(1));
+          setTotalReviews(data.totalReviews || 0);
         }
       } finally {
         setIsLoading(false);
@@ -40,11 +63,6 @@ export default function ReviewsSection() {
     }
     fetchReviews();
   }, []);
-
-  const average = useMemo(() => {
-    if (reviews.length === 0) return "0.0";
-    return (reviews.reduce((acc, item) => acc + item.rating, 0) / reviews.length).toFixed(1);
-  }, [reviews]);
 
   if (isLoading) {
     return (
@@ -75,7 +93,7 @@ export default function ReviewsSection() {
                 <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
               ))}
             </div>
-            <p className="mt-1 text-xs text-neutral-600">{reviews.length} latest reviews</p>
+            <p className="mt-1 text-xs text-neutral-600">{totalReviews} total reviews</p>
           </div>
         </div>
       </article>
@@ -120,4 +138,3 @@ export default function ReviewsSection() {
     </div>
   );
 }
-

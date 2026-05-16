@@ -30,6 +30,9 @@ interface Service {
   icon: string | null;
   price: string | null;
   active: boolean;
+  adminDeletionReason?: string | null;
+  adminDeactivatedAt?: string | null;
+  providerDeletionNoticeSeenAt?: string | null;
   _count: { orders: number };
 }
 
@@ -47,7 +50,7 @@ interface ProviderLocation {
   active: boolean;
 }
 
-const iconOptions: { value: string; label: string; Icon: LucideIcon }[] = [
+const baseServiceTypeOptions: { value: string; label: string; Icon: LucideIcon }[] = [
   { value: "home", label: "Home", Icon: House },
   { value: "sparkles", label: "Cleaning", Icon: Sparkles },
   { value: "palette", label: "Painting", Icon: Paintbrush },
@@ -56,6 +59,27 @@ const iconOptions: { value: string; label: string; Icon: LucideIcon }[] = [
   { value: "bug", label: "Pest Control", Icon: Bug },
 ];
 
+const moreServiceTypeOptions: { value: string; label: string; Icon: LucideIcon }[] = [
+  { value: "electrician", label: "Electrician", Icon: Wrench },
+  { value: "ac-service", label: "AC Service", Icon: Wrench },
+  { value: "carpenter", label: "Carpenter", Icon: Wrench },
+  { value: "tile-marble", label: "Tile & Marble", Icon: House },
+  { value: "deep-cleaning", label: "Deep Cleaning", Icon: Sparkles },
+  { value: "sofa-cleaning", label: "Sofa Cleaning", Icon: Sparkles },
+  { value: "water-tank-cleaning", label: "Water Tank Cleaning", Icon: Droplets },
+  { value: "generator-repair", label: "Generator Repair", Icon: Wrench },
+  { value: "inverter-installation", label: "Inverter Installation", Icon: Wrench },
+  { value: "cctv-installation", label: "CCTV Installation", Icon: House },
+  { value: "ro-water-filter", label: "RO Water Filter", Icon: Droplets },
+  { value: "handyman", label: "Handyman", Icon: Wrench },
+  { value: "bike-service", label: "Bike Service", Icon: Wrench },
+  { value: "car-detailing", label: "Car Detailing", Icon: Sparkles },
+  { value: "movers-packers", label: "Movers & Packers", Icon: House },
+];
+
+const allServiceTypeOptions = [...baseServiceTypeOptions, ...moreServiceTypeOptions];
+const moreServiceTypeValues = new Set(moreServiceTypeOptions.map((item) => item.value));
+
 export default function ProviderServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [providerLocations, setProviderLocations] = useState<ProviderLocation[]>([]);
@@ -63,6 +87,7 @@ export default function ProviderServicesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [iconSearch, setIconSearch] = useState("");
+  const [showMoreServiceTypes, setShowMoreServiceTypes] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -100,6 +125,46 @@ export default function ProviderServicesPage() {
     Promise.all([fetchServices(), fetchProviderLocations()]);
   }, []);
 
+  useEffect(() => {
+    services.forEach((service) => {
+      const hasUnreadAdminNotice =
+        !service.active &&
+        !!service.adminDeactivatedAt &&
+        !service.providerDeletionNoticeSeenAt;
+      if (!hasUnreadAdminNotice) return;
+
+      const hasReason = Boolean(service.adminDeletionReason && service.adminDeletionReason.trim());
+      const heading = hasReason ? "Service Removed by Admins" : "Service Removed Alert.";
+      const body = hasReason
+        ? `Reason: ${service.adminDeletionReason}`
+        : `We are Sorry your ${service.name} has been removed from platform, Please make sure not to provide this type of services else you may get Ban. For Appeal Contact us.`;
+
+      toast.error(`${heading}\n${body}`, {
+        id: `service-admin-deactivation-${service.id}`,
+        duration: Infinity,
+        closeButton: true,
+        onDismiss: async () => {
+          try {
+            await fetch(`/api/provider/services/${service.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ acknowledgeAdminDeletionNotice: true }),
+            });
+            setServices((prev) =>
+              prev.map((item) =>
+                item.id === service.id
+                  ? { ...item, providerDeletionNoticeSeenAt: new Date().toISOString() }
+                  : item
+              )
+            );
+          } catch {
+            // best effort only
+          }
+        },
+      });
+    });
+  }, [services]);
+
   const resetForm = () =>
     setFormData({
       name: "",
@@ -115,6 +180,7 @@ export default function ProviderServicesPage() {
     setShowModal(false);
     setEditingService(null);
     setIconSearch("");
+    setShowMoreServiceTypes(false);
     resetForm();
   };
 
@@ -206,6 +272,16 @@ export default function ProviderServicesPage() {
     return [location.city, location.area, location.pincode].filter(Boolean).join(", ");
   };
 
+  const visibleServiceTypeOptions = showMoreServiceTypes
+    ? allServiceTypeOptions
+    : baseServiceTypeOptions;
+
+  const filteredServiceTypeOptions = (
+    iconSearch.trim().length > 0 ? allServiceTypeOptions : visibleServiceTypeOptions
+  ).filter((opt) =>
+    `${opt.label} ${opt.value}`.toLowerCase().includes(iconSearch.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -234,6 +310,7 @@ export default function ProviderServicesPage() {
                 onClick={() => {
                   resetForm();
                   setEditingService(null);
+                  setShowMoreServiceTypes(false);
                   setShowModal(true);
                 }}
               >
@@ -253,7 +330,7 @@ export default function ProviderServicesPage() {
             <p className="mt-2 text-sm text-neutral-600">Add your first service to start receiving orders.</p>
           </section>
         ) : (
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {services.map((service) => (
               <article key={service.id} className="card-hover flex h-full flex-col">
                 <div className="mb-4 flex items-start justify-between gap-3">
@@ -286,6 +363,9 @@ export default function ProviderServicesPage() {
                         selectedLocationIds: [],
                         serviceAreas: [{ city: "", area: "", pincode: "" }],
                       });
+                      setShowMoreServiceTypes(
+                        Boolean(service.icon && moreServiceTypeValues.has(service.icon))
+                      );
                       setShowModal(true);
                     }}
                   >
@@ -360,14 +440,22 @@ export default function ProviderServicesPage() {
                           className="input-field pl-9"
                         />
                       </div>
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <p className="text-xs text-neutral-500">
+                          {showMoreServiceTypes
+                            ? "Showing all service types"
+                            : "Showing common service types"}
+                        </p>
+                        <button
+                          type="button"
+                          className="rounded-full border border-primary-200 px-3 py-1 text-xs font-semibold text-primary-700"
+                          onClick={() => setShowMoreServiceTypes((prev) => !prev)}
+                        >
+                          {showMoreServiceTypes ? "Show Less" : "Show More Services"}
+                        </button>
+                      </div>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {iconOptions
-                          .filter((opt) =>
-                            `${opt.label} ${opt.value}`
-                              .toLowerCase()
-                              .includes(iconSearch.toLowerCase())
-                          )
-                          .map((opt) => {
+                        {filteredServiceTypeOptions.map((opt) => {
                             const selected = formData.icon === opt.value;
                             return (
                               <button
@@ -459,7 +547,11 @@ export default function ProviderServicesPage() {
                               label="City"
                               value={row.city}
                               onChange={(e) => updateLocationRow(index, "city", e.target.value)}
-                              required={!editingService && index === 0}
+                              required={
+                                !editingService &&
+                                index === 0 &&
+                                formData.selectedLocationIds.length === 0
+                              }
                             />
                             <Input
                               label="Area"

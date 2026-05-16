@@ -2,23 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-
-async function deleteServiceReviews(serviceId: string) {
-  const orders = await prisma.order.findMany({
-    where: { serviceId },
-    select: { id: true },
-  });
-
-  if (orders.length === 0) return 0;
-
-  const result = await prisma.review.deleteMany({
-    where: {
-      orderId: { in: orders.map((order) => order.id) },
-    },
-  });
-
-  return result.count;
-}
+import { renderProviderServiceRemovedEmail, sendEmail } from "@/lib/email";
 
 export async function PATCH(
   request: Request,
@@ -34,10 +18,6 @@ export async function PATCH(
     }
 
     const body = await request.json();
-
-    if (body.active === false) {
-      await deleteServiceReviews(params.serviceId);
-    }
 
     const service = await prisma.service.update({
       where: { id: params.serviceId },
@@ -66,24 +46,80 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const orderCount = await prisma.order.count({
-      where: { serviceId: params.serviceId },
+    const body = await request.json().catch(() => ({}));
+    const deletionReason =
+      typeof body?.reason === "string" && body.reason.trim().length > 0
+        ? body.reason.trim()
+        : null;
+
+    const existing = await prisma.service.findUnique({
+      where: { id: params.serviceId },
+      select: { id: true, active: true },
     });
 
-    if (orderCount > 0) {
-      await deleteServiceReviews(params.serviceId);
-      await prisma.service.update({
+    if (!existing) {
+      return NextResponse.json({ error: "Service not found" }, { status: 404 });
+    }
+
+    // First delete click: deactivate and keep record for a second confirmation click.
+    if (existing.active) {
+      const updated = await prisma.service.update({
         where: { id: params.serviceId },
-        data: { active: false },
+        data: {
+          active: false,
+          adminDeletionReason: deletionReason,
+          adminDeactivatedAt: new Date(),
+          providerDeletionNoticeSeenAt: null,
+        },
+        include: {
+          provider: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
       });
+
+      if (updated.provider?.email) {
+        await sendEmail({
+          to: updated.provider.email,
+          subject: "Service removed by admin - The Hood",
+          html: renderProviderServiceRemovedEmail({
+            providerName: updated.provider.name || "Provider",
+            serviceName: updated.name,
+            reason: deletionReason,
+          }),
+        }).catch((error) => console.error("Provider service removed email error:", error));
+      }
+
       return NextResponse.json({
-        message: "Service archived and related reviews deleted because it has existing orders",
+        message:
+          "Service deactivated. Click delete again to permanently remove it from database.",
       });
     }
 
-    await deleteServiceReviews(params.serviceId);
+    // Second delete click: hard delete service and all dependent records.
+    const orders = await prisma.order.findMany({
+      where: { serviceId: params.serviceId },
+      select: { id: true },
+    });
+    const orderIds = orders.map((order: (typeof orders)[number]) => order.id);
+
+    if (orderIds.length > 0) {
+      await prisma.review.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+      await prisma.payment.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+      await prisma.order.deleteMany({
+        where: { id: { in: orderIds } },
+      });
+    }
+
     await prisma.service.delete({ where: { id: params.serviceId } });
-    return NextResponse.json({ message: "Service deleted and related reviews removed" });
+    return NextResponse.json({ message: "Service permanently deleted" });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to delete service" },

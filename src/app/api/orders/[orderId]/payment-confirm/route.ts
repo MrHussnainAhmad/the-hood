@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getPlatformFeePercent } from "@/lib/platform-fee";
+import { renderPaymentConfirmationEmail, sendEmail } from "@/lib/email";
 
 export async function POST(
   request: Request,
@@ -32,11 +33,15 @@ export async function POST(
         id: true,
         paymentIntentId: true,
         amount: true,
+        currency: true,
         status: true,
         provider: {
           select: {
             providerEmployeeRange: true,
           },
+        },
+        user: {
+          select: { email: true, name: true },
         },
       },
     });
@@ -82,6 +87,19 @@ export async function POST(
       } else {
         throw updateError;
       }
+    }
+
+    if (order.user?.email) {
+      await sendEmail({
+        to: order.user.email,
+        subject: "Payment confirmed - The Hood",
+        html: renderPaymentConfirmationEmail({
+          name: order.user.name || "there",
+          orderId: order.id,
+          amount,
+          currency: order.currency || "usd",
+        }),
+      }).catch((error) => console.error("Payment confirmation email error:", error));
     }
 
     return NextResponse.json({ success: true });

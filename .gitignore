@@ -35,6 +35,11 @@ yarn-error.log*
 
 # local SRS/reference documents
 SRS/
+SDD/
+*.pdf
+*.docx
+scripts/seed-*.js
+scripts/*seed*.js
 
 # vercel
 .vercel

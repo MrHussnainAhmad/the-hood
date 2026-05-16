@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { OrderStatus } from "@prisma/client";
+import { renderServiceDeliveredEmail, sendEmail } from "@/lib/email";
 
 async function getOrderId(props: { params: Promise<{ orderId: string }> }) {
   const params = await props.params;
@@ -22,6 +23,17 @@ export async function PATCH(
 
   const body = await request.json();
   const { status } = body;
+  const allowedStatuses: OrderStatus[] = [
+    "PROCESSING",
+    "ON_WAY",
+    "WORKING",
+    "COMPLETED",
+    "CANCELLED",
+  ];
+  if (!allowedStatuses.includes(status as OrderStatus)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+  const nextStatus = status as OrderStatus;
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: {
@@ -39,8 +51,12 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updateData: Prisma.OrderUpdateInput = { status };
-  if (status === "COMPLETED") {
+  const updateData: {
+    status: OrderStatus;
+    completedDate?: Date;
+    payoutStatus?: string;
+  } = { status: nextStatus };
+  if (nextStatus === "COMPLETED") {
     updateData.completedDate = new Date();
     if (order.paymentStatus === "PAID" && order.payoutStatus !== "PAID") {
       updateData.payoutStatus = "READY";
@@ -55,6 +71,18 @@ export async function PATCH(
       service: true,
     },
   });
+
+  if (nextStatus === "COMPLETED" && updatedOrder.user?.email) {
+    await sendEmail({
+      to: updatedOrder.user.email,
+      subject: "Service delivered - The Hood",
+      html: renderServiceDeliveredEmail({
+        name: updatedOrder.user.name || "there",
+        orderId: updatedOrder.id,
+        serviceName: updatedOrder.service?.name || "Service",
+      }),
+    }).catch((error) => console.error("Service delivered email error:", error));
+  }
 
   return NextResponse.json(updatedOrder);
 }

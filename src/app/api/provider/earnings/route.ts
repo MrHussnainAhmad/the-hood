@@ -38,7 +38,10 @@ export async function GET() {
   });
 
   const summary = orders.reduce(
-    (acc, order) => {
+    (
+      acc: { total: number; paid: number; ready: number; pending: number },
+      order: (typeof orders)[number]
+    ) => {
       const gross = order.amount || 0;
       const fee = order.platformFee ?? Number(((gross * feePercent) / 100).toFixed(2));
       const payout = order.providerPayoutAmount ?? Number((gross - fee).toFixed(2));
@@ -57,7 +60,7 @@ export async function GET() {
     { total: 0, paid: 0, ready: 0, pending: 0 }
   );
 
-  const normalizedOrders = orders.map((order) => {
+  const normalizedOrders = orders.map((order: (typeof orders)[number]) => {
     const gross = order.amount || 0;
     const fee = order.platformFee ?? Number(((gross * feePercent) / 100).toFixed(2));
     const payout = order.providerPayoutAmount ?? Number((gross - fee).toFixed(2));

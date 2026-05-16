@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { censorAbusiveLanguage } from "@/lib/moderation";
+import { renderServiceDeliveredEmail, sendEmail } from "@/lib/email";
 
 export async function PATCH(
   request: Request,
@@ -40,6 +41,18 @@ export async function PATCH(
         service: true,
       },
     });
+
+    if (status === "COMPLETED" && order.user?.email) {
+      await sendEmail({
+        to: order.user.email,
+        subject: "Service delivered - The Hood",
+        html: renderServiceDeliveredEmail({
+          name: order.user.name || "there",
+          orderId: order.id,
+          serviceName: order.service?.name || "Service",
+        }),
+      }).catch((error) => console.error("Admin service delivered email error:", error));
+    }
 
     return NextResponse.json(order);
   } catch (error) {

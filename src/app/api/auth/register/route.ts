@@ -1,24 +1,58 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import {
+  getPasswordStrength,
+  getPwnedPasswordCount,
+  MIN_PASSWORD_LENGTH,
+  MIN_PASSWORD_SCORE,
+} from "@/lib/password-security";
+import { createEmailVerificationToken } from "@/lib/email-verification";
+import { renderAccountCreatedEmail, renderVerifyEmailTemplate, sendEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { email, password, name, phone, role, providerEmployeeRange } = body;
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
     const normalizedRole = role === "PROVIDER" ? "PROVIDER" : "CONSUMER";
     const allowedRanges = new Set(["1", "2-5", "5-10", "10+"]);
 
-    if (!email || !password || !name) {
+    if (!normalizedEmail || !password || !name) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json(
+        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    const strength = getPasswordStrength(password);
+    if (strength.score < MIN_PASSWORD_SCORE) {
+      return NextResponse.json(
+        { error: "Password is too weak. Please use a stronger password." },
+        { status: 400 }
+      );
+    }
+
+    const breachedCount = await getPwnedPasswordCount(password);
+    if (breachedCount > 0) {
+      return NextResponse.json(
+        {
+          error: "This password has appeared in known data breaches. Please choose another one.",
+          breachedCount,
+        },
         { status: 400 }
       );
     }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
@@ -43,7 +77,7 @@ export async function POST(request: Request) {
     try {
       user = await prisma.user.create({
         data: {
-          email,
+          email: normalizedEmail,
           password: hashedPassword,
           name,
           phone,
@@ -69,7 +103,7 @@ export async function POST(request: Request) {
       }
       user = await prisma.user.create({
         data: {
-          email,
+          email: normalizedEmail,
           password: hashedPassword,
           name,
           phone,
@@ -85,6 +119,23 @@ export async function POST(request: Request) {
         },
       });
     }
+
+    const verificationToken = await createEmailVerificationToken(normalizedEmail);
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}`;
+
+    await Promise.allSettled([
+      sendEmail({
+        to: normalizedEmail,
+        subject: "Welcome to The Hood",
+        html: renderAccountCreatedEmail(name),
+      }),
+      sendEmail({
+        to: normalizedEmail,
+        subject: "Verify your email - The Hood",
+        html: renderVerifyEmailTemplate(name, verifyUrl),
+      }),
+    ]);
 
     return NextResponse.json(
       { message: "User created successfully", user },

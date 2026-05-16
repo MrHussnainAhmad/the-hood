@@ -85,7 +85,7 @@ async function deleteServiceReviews(serviceId: string) {
 
   const result = await prisma.review.deleteMany({
     where: {
-      orderId: { in: orders.map((order) => order.id) },
+      orderId: { in: orders.map((order: (typeof orders)[number]) => order.id) },
     },
   });
 
@@ -104,6 +104,26 @@ export async function PATCH(
   }
 
   const body = await request.json();
+  if (body?.acknowledgeAdminDeletionNotice === true) {
+    const owned = await prisma.service.findUnique({
+      where: { id: serviceId },
+      select: { id: true, providerId: true },
+    });
+
+    if (!owned) {
+      return NextResponse.json({ error: "Service not found" }, { status: 404 });
+    }
+    if (session.user.role !== "ADMIN" && owned.providerId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const acknowledged = await prisma.service.update({
+      where: { id: serviceId },
+      data: { providerDeletionNoticeSeenAt: new Date() },
+    });
+    return NextResponse.json(acknowledged);
+  }
+
   const { serviceAreas, serviceArea, selectedLocationIds, ...serviceData } = body;
 
   const service = await prisma.service.findUnique({ where: { id: serviceId }, select: { providerId: true } });

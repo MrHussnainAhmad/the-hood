@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { renderAccountDeletedEmail, sendEmail } from "@/lib/email";
 
 export async function PATCH(
   request: Request,
@@ -99,9 +100,22 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const targetUser = await prisma.user.findUnique({
+      where: { id: params.userId },
+      select: { email: true, name: true },
+    });
+
     await prisma.user.delete({
       where: { id: params.userId },
     });
+
+    if (targetUser?.email) {
+      await sendEmail({
+        to: targetUser.email,
+        subject: "Account deleted - The Hood",
+        html: renderAccountDeletedEmail(targetUser.name || "there"),
+      }).catch((error) => console.error("Account delete email error:", error));
+    }
 
     return NextResponse.json({ message: "User deleted successfully" });
   } catch (error) {

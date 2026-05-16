@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, Home, LogOut, Menu, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Home, LogOut, Menu, UserCircle2, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
@@ -16,6 +16,7 @@ const guestLinks = [
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const { data: session } = useSession();
   const isProvider = session?.user.role === "PROVIDER";
   const providerOrdersCount = usePollingCount({
@@ -85,19 +86,34 @@ export default function Navbar() {
 
           <div className="hidden items-center gap-2 md:flex">
             {session ? (
-              <>
-                {session.user.role === "ADMIN" && (
-                  <Link href={dashboardHref}>
-                    <Button variant="outline" size="sm">
-                      Workspace
-                    </Button>
-                  </Link>
-                )}
-                <Button onClick={handleSignOut} variant="ghost" size="sm">
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
+              <div className="relative">
+                <Button onClick={() => setIsProfileMenuOpen((s) => !s)} variant="outline" size="sm">
+                  <UserCircle2 className="h-4 w-4" />
+                  Account
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
-              </>
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 top-12 z-50 min-w-[180px] rounded-lg border border-line bg-white p-1 shadow-soft">
+                    {session.user.role === "ADMIN" && (
+                      <Link href={dashboardHref} className="block rounded-md px-3 py-2 text-sm hover:bg-paper">
+                        Workspace
+                      </Link>
+                    )}
+                    <Link href="/profile" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-paper">
+                      <UserCircle2 className="h-4 w-4" />
+                      Profile
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-paper"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <Link href="/login">
@@ -159,6 +175,12 @@ export default function Navbar() {
                     </Button>
                   </Link>
                 )}
+                <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="outline" className="w-full justify-center">
+                    <UserCircle2 className="h-4 w-4" />
+                    Profile
+                  </Button>
+                </Link>
                 <Button onClick={handleSignOut} variant="ghost" className="w-full justify-center">
                   Sign Out
                 </Button>

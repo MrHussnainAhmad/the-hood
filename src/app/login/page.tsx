@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft, Eye, EyeOff, Home, Lock, Mail, ShieldCheck } from "lucide-react";
@@ -10,7 +10,9 @@ import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -18,6 +20,16 @@ export default function LoginPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [canResendVerification, setCanResendVerification] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
+
+  useEffect(() => {
+    const verified = searchParams.get("verified");
+    if (verified === "success") toast.success("Email verified. You can sign in now.");
+    if (verified === "invalid" || verified === "error" || verified === "missing") {
+      toast.error("Verification link is invalid or expired. Please request a new one.");
+    }
+  }, [searchParams]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -51,8 +63,16 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        toast.error("Invalid email or password");
+        if (result.error.toLowerCase().includes("verify")) {
+          toast.error(
+            "Account not verified. Please close this popup and click resend verification mail so you can get mail if you didnot last time."
+          );
+          setCanResendVerification(true);
+        } else {
+          toast.error("Invalid email or password");
+        }
       } else {
+        setCanResendVerification(false);
         const response = await fetch("/api/auth/session");
         const session = await response.json();
 
@@ -68,6 +88,58 @@ export default function LoginPage() {
       toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    if (!formData.email) {
+      toast.error("Enter your email first");
+      return;
+    }
+    setIsResending(true);
+    try {
+      const response = await fetch("/api/auth/verify-email/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.error || "Failed to send verification email");
+        return;
+      }
+      toast.success(
+        "Verification Link has been sent to your mail, Please check your Inbox or Junk/Spam Folder...."
+      );
+    } catch {
+      toast.error("Failed to send verification email");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const sendResetPasswordLink = async () => {
+    if (!formData.email) {
+      toast.error("Please enter email first.");
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      const response = await fetch("/api/auth/password-reset/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.error || "Failed to send reset email");
+        return;
+      }
+      toast.success(data.message || "Reset link sent");
+    } catch {
+      toast.error("Failed to send reset email");
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -174,6 +246,26 @@ export default function LoginPage() {
 
               <Button type="submit" className="mt-2 w-full" size="lg" isLoading={isLoading}>
                 Sign In
+              </Button>
+              {canResendVerification && (
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="outline"
+                  onClick={resendVerification}
+                  isLoading={isResending}
+                >
+                  Resend Verification Email
+                </Button>
+              )}
+              <Button
+                type="button"
+                className="w-full"
+                variant="outline"
+                onClick={sendResetPasswordLink}
+                isLoading={isSendingReset}
+              >
+                Reset Password
               </Button>
             </form>
 

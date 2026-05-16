@@ -13,6 +13,8 @@ interface Service {
   icon: string | null;
   price: string | null;
   active: boolean;
+  adminDeletionReason?: string | null;
+  adminDeactivatedAt?: string | null;
   _count: {
     orders: number;
   };
@@ -30,6 +32,8 @@ export default function ServicesManagement() {
     price: "",
     active: true,
   });
+  const [servicePendingDelete, setServicePendingDelete] = useState<Service | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
 
   useEffect(() => {
     fetchServices();
@@ -73,17 +77,20 @@ export default function ServicesManagement() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this service?")) return;
-
+  const handleDelete = async () => {
+    if (!servicePendingDelete) return;
     try {
-      const response = await fetch(`/api/admin/services/${id}`, {
+      const response = await fetch(`/api/admin/services/${servicePendingDelete.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: deleteReason }),
       });
       const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         toast.success(data?.message || "Service deleted");
+        setServicePendingDelete(null);
+        setDeleteReason("");
         fetchServices();
       } else {
         toast.error(data?.error || "Failed to delete service");
@@ -162,7 +169,13 @@ export default function ServicesManagement() {
                   <button onClick={() => openEditModal(service)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-line text-primary-700 hover:bg-primary-50">
                     <Edit className="h-4 w-4" />
                   </button>
-                  <button onClick={() => handleDelete(service.id)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50">
+                  <button
+                    onClick={() => {
+                      setServicePendingDelete(service);
+                      setDeleteReason(service.adminDeletionReason || "");
+                    }}
+                    className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -170,6 +183,57 @@ export default function ServicesManagement() {
             </article>
           ))}
         </section>
+      )}
+
+      {servicePendingDelete && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 backdrop-blur-[2px]">
+          <div className="mx-auto mt-8 max-w-md rounded-xl border border-line bg-white p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-2xl text-ink">Delete Service</h2>
+              <button
+                onClick={() => {
+                  setServicePendingDelete(null);
+                  setDeleteReason("");
+                }}
+                className="focus-ring grid h-9 w-9 place-items-center rounded-lg border border-line"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-sm text-neutral-700">
+              {servicePendingDelete.active
+                ? "First delete click deactivates the service. Click delete again later to permanently remove it."
+                : "This service is already inactive. Deleting now will permanently remove the service and related orders/reviews/payments."}
+            </p>
+
+            <div className="mt-4">
+              <Input
+                label="Reason (Optional)"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Reason for provider"
+              />
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setServicePendingDelete(null);
+                  setDeleteReason("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleDelete} className="flex-1">
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showModal && (

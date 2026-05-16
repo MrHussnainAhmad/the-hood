@@ -34,7 +34,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    const sanitizedOrders = orders.map((order) => ({
+    const sanitizedOrders = orders.map((order: (typeof orders)[number]) => ({
       ...order,
       review: order.review
         ? {

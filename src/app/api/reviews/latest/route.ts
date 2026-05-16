@@ -9,34 +9,44 @@ export async function GET() {
     const session = await getServerSession(authOptions);
     const maxReviews = session ? 6 : 4;
 
-    const reviews = await prisma.review.findMany({
-      take: maxReviews,
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: {
-            name: true,
+    const [reviews, aggregate] = await Promise.all([
+      prisma.review.findMany({
+        take: maxReviews,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: {
+            select: {
+              name: true,
+            },
           },
-        },
-        order: {
-          select: {
-            service: {
-              select: {
-                name: true,
-                icon: true,
+          order: {
+            select: {
+              service: {
+                select: {
+                  name: true,
+                  icon: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      }),
+      prisma.review.aggregate({
+        _avg: { rating: true },
+        _count: { rating: true },
+      }),
+    ]);
 
-    const sanitizedReviews = reviews.map((review) => ({
+    const sanitizedReviews = reviews.map((review: (typeof reviews)[number]) => ({
       ...review,
       comment: censorAbusiveLanguage(review.comment),
     }));
 
-    return NextResponse.json(sanitizedReviews);
+    return NextResponse.json({
+      latestReviews: sanitizedReviews,
+      averageRating: aggregate._avg.rating ?? 0,
+      totalReviews: aggregate._count.rating ?? 0,
+    });
   } catch (error) {
     console.error("Reviews fetch error:", error);
     return NextResponse.json(

@@ -123,7 +123,7 @@ export default async function OrderDetailsPage({
               <div className="mb-6">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Uploaded Images</p>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  {order.images.map((img, idx) => (
+                  {order.images.map((img: string, idx: number) => (
                     <div key={idx} className="overflow-hidden rounded-lg border border-line bg-paper">
                       <img src={img} alt={`Order image ${idx + 1}`} className="h-24 w-full object-cover" />
                     </div>

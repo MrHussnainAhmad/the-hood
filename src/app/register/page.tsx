@@ -6,6 +6,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft, BriefcaseBusiness, Eye, EyeOff, Home, Lock, Mail, Phone, User } from "lucide-react";
 import { toast } from "sonner";
+import zxcvbn from "zxcvbn";
+
+const MIN_PASSWORD_LENGTH = 10;
+const MIN_PASSWORD_SCORE = 3;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,6 +26,23 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const passwordStrength = zxcvbn(formData.password || "");
+
+  const strengthLabel =
+    passwordStrength.score <= 1
+      ? "Weak"
+      : passwordStrength.score === 2
+      ? "Fair"
+      : passwordStrength.score === 3
+      ? "Strong"
+      : "Very Strong";
+  const strengthBarWidth = `${((passwordStrength.score + 1) / 5) * 100}%`;
+  const strengthBarColor =
+    passwordStrength.score <= 1
+      ? "bg-rose-500"
+      : passwordStrength.score === 2
+      ? "bg-amber-500"
+      : "bg-emerald-500";
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -44,8 +65,10 @@ export default function RegisterPage() {
 
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    } else if (formData.password.length < MIN_PASSWORD_LENGTH) {
+      newErrors.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+    } else if (passwordStrength.score < MIN_PASSWORD_SCORE) {
+      newErrors.password = "Password is too weak. Use a stronger password.";
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -87,7 +110,9 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success("Account created successfully");
+      toast.success(
+        "Verification Link has been sent to your mail, Please check your Inbox or Junk/Spam Folder...."
+      );
       router.push("/login");
     } catch {
       toast.error("Something went wrong");
@@ -261,7 +286,7 @@ export default function RegisterPage() {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className={`input-field focus-ring pl-10 pr-11 ${errors.password ? "border-red-500 bg-red-50/40" : ""}`}
-                      placeholder="Minimum 6 characters"
+                      placeholder="Minimum 10 characters"
                     />
                     <button
                       type="button"
@@ -273,6 +298,19 @@ export default function RegisterPage() {
                     </button>
                   </div>
                   {errors.password && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.password}</p>}
+                  {formData.password && !errors.password && (
+                    <div className="mt-2">
+                      <div className="h-2 overflow-hidden rounded-full bg-neutral-200">
+                        <div
+                          className={`h-full ${strengthBarColor} transition-all`}
+                          style={{ width: strengthBarWidth }}
+                        />
+                      </div>
+                      <p className="mt-1.5 text-xs font-medium text-neutral-700">
+                        Strength: {strengthLabel}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>

@@ -143,6 +143,9 @@ model Service {
   icon        String?
   price       String?
   active      Boolean  @default(true)
+  adminDeletionReason String?
+  adminDeactivatedAt DateTime?
+  providerDeletionNoticeSeenAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
