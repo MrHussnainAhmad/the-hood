@@ -2,8 +2,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { OrderStatus } from "@prisma/client";
 import { renderServiceDeliveredEmail, sendEmail } from "@/lib/email";
+
+type OrderStatusValue = "PROCESSING" | "ON_WAY" | "WORKING" | "COMPLETED" | "CANCELLED";
 
 async function getOrderId(props: { params: Promise<{ orderId: string }> }) {
   const params = await props.params;
@@ -23,17 +24,17 @@ export async function PATCH(
 
   const body = await request.json();
   const { status } = body;
-  const allowedStatuses: OrderStatus[] = [
+  const allowedStatuses: OrderStatusValue[] = [
     "PROCESSING",
     "ON_WAY",
     "WORKING",
     "COMPLETED",
     "CANCELLED",
   ];
-  if (!allowedStatuses.includes(status as OrderStatus)) {
+  if (!allowedStatuses.includes(status as OrderStatusValue)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
-  const nextStatus = status as OrderStatus;
+  const nextStatus = status as OrderStatusValue;
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: {
@@ -52,7 +53,7 @@ export async function PATCH(
   }
 
   const updateData: {
-    status: OrderStatus;
+    status: OrderStatusValue;
     completedDate?: Date;
     payoutStatus?: string;
   } = { status: nextStatus };

@@ -94,20 +94,30 @@ export default async function ServicesPage({
   const selectedType = typeof type === "string" ? type : "";
   const currentPage = Math.max(1, Number(page || "1") || 1);
   const pageSize = 12;
-  const serviceTypes = Array.from(
-    new Set(services.map((service: (typeof services)[number]) => service.icon || "home"))
+  const serviceTypes: string[] = Array.from(
+    new Set<string>(services.map((service: (typeof services)[number]) => service.icon || "home"))
   );
   const filteredServicesByType = selectedType
     ? services.filter((service: (typeof services)[number]) => (service.icon || "home") === selectedType)
     : services;
 
   const buildRankedServices = (items: (typeof services)) => {
-    const withScore = items.map((service: (typeof services)[number]) => {
+    type RankedEntry = {
+      service: (typeof services)[number];
+      score: number;
+      reviewCount: number;
+      averageRating: number;
+      orderCount: number;
+    };
+    const withScore: RankedEntry[] = items.map((service: (typeof services)[number]) => {
       const ratings = service.orders
-        .map((order) => order.review?.rating)
-        .filter((rating): rating is number => typeof rating === "number");
+        .map((order: (typeof service.orders)[number]) => order.review?.rating)
+        .filter((rating: unknown): rating is number => typeof rating === "number");
       const reviewCount = ratings.length;
-      const averageRating = reviewCount > 0 ? ratings.reduce((acc, r) => acc + r, 0) / reviewCount : 0;
+      const averageRating =
+        reviewCount > 0
+          ? ratings.reduce((acc: number, r: number) => acc + r, 0) / reviewCount
+          : 0;
       const orderCount = service._count.orders;
       // Combined score: rating quality, rating quantity, and order volume.
       const score = averageRating * 100 + reviewCount * 10 + orderCount;
@@ -115,15 +125,18 @@ export default async function ServicesPage({
     });
 
     const topRated = [...withScore]
-      .sort((a, b) => b.score - a.score || b.reviewCount - a.reviewCount || b.orderCount - a.orderCount)
-      .map((item) => item.service);
+      .sort(
+        (a: RankedEntry, b: RankedEntry) =>
+          b.score - a.score || b.reviewCount - a.reviewCount || b.orderCount - a.orderCount
+      )
+      .map((item: RankedEntry) => item.service);
 
     const topRatedIds = new Set(topRated.slice(0, 3).map((service) => service.id));
     const topRatedSection = topRated.slice(0, 3);
     const topRatedBadgeById = new Map(
       withScore
-        .filter((item) => topRatedIds.has(item.service.id))
-        .map((item) => [item.service.id, item.averageRating.toFixed(1)])
+        .filter((item: RankedEntry) => topRatedIds.has(item.service.id))
+        .map((item: RankedEntry) => [item.service.id, item.averageRating.toFixed(1)])
     );
 
     const newestPool = items.filter((service: (typeof services)[number]) => !topRatedIds.has(service.id));
